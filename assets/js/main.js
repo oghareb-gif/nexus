@@ -139,7 +139,7 @@
       )
       .join("") +
     `
-    <a class="review-card review-cta reveal" href="${N.brand.mapsUrl}" target="_blank" rel="noopener">
+    <a class="review-card review-cta reveal" href="${N.brand.reviewsUrl || N.brand.mapsUrl}" target="_blank" rel="noopener">
       <span class="rc-score">${N.proof.googleRating.toFixed(1)}</span>
       <span class="rc-stars">★★★★★</span>
       <span class="rc-txt">Read all ${N.proof.googleReviews} reviews on Google →</span>
@@ -177,9 +177,10 @@
 
   /* ---- Visit: embedded map + location & payment details ---- */
   if (N.location && $("#mapFrame")) {
-    const { lat, lng } = N.location;
-    // Google Maps embed — no API key required.
-    $("#mapFrame").src = `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+    // Google Maps embed — no API key required. Embedding the business by name
+    // (not bare coordinates) makes the clinic's own pin + info card show up.
+    const q = encodeURIComponent(`${N.brand.legalName}, ${N.brand.address}`);
+    $("#mapFrame").src = `https://maps.google.com/maps?q=${q}&z=16&output=embed`;
   }
   if ($("#visitInfo")) {
     const P = N.payment || {};
@@ -193,7 +194,7 @@
       ${row("phone", "Call us", `<a href="${tel}">${N.contact.phoneDisplay}</a>`)}
       ${row("whatsapp", "WhatsApp", `<a href="${waLink}" target="_blank" rel="noopener">Message us</a>`)}
       ${N.location.parking ? row("pin", "Parking", `<span>${N.location.parking}</span>`) : ""}
-      <a class="btn block" href="${N.brand.mapsUrl}" target="_blank" rel="noopener" style="margin-top:6px;">Get directions →</a>
+      <a class="btn block" href="${N.brand.directionsUrl || N.brand.mapsUrl}" target="_blank" rel="noopener" style="margin-top:6px;">Get directions →</a>
       ${
         P.methods
           ? `<div class="pay-card">

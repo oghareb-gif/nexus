@@ -14,7 +14,12 @@ window.NEXUS = {
     city: "Heliopolis, Cairo",
     address: "31 El-Imam Ali, Almazah, Heliopolis, Cairo Governorate 11736",
     plusCode: "38WM+7G Heliopolis",
-    mapsUrl: "https://www.google.com/maps/place/Nexus+Physio+Clinic/@30.095679,31.3337638,17z",
+    /* Google place ID for the clinic — makes Maps open the clinic itself
+       (pin + info card), not just the neighbourhood. */
+    placeId: "ChIJOwuFXAAVWBQR4rspXBGifrA",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Nexus+Physio+Clinic+Heliopolis+Cairo&query_place_id=ChIJOwuFXAAVWBQR4rspXBGifrA",
+    directionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Nexus+Physio+Clinic+Heliopolis+Cairo&destination_place_id=ChIJOwuFXAAVWBQR4rspXBGifrA",
+    reviewsUrl: "https://search.google.com/local/reviews?placeid=ChIJOwuFXAAVWBQR4rspXBGifrA",
     hours: "Sat–Thu · 2:00 PM – 10:00 PM",
     email: "nexusphysioclinic.info@gmail.com",
     instagram: "https://www.instagram.com/nexus.physioclinic/",
