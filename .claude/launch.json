@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nexus-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "/private/tmp/claude-502/-Users-omarghareb1-Desktop-Instant-website/49688a7c-169b-4115-a15a-095371037775/scratchpad/nexus_preview"],
+      "port": 8123
+    }
+  ]
+}

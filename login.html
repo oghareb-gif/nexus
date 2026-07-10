@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in — Nexus Clinic</title>
+<meta name="description" content="Sign in to your Nexus Clinic account to book sessions and track your loyalty rewards." />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070a08'/%3E%3Ctext x='32' y='47' font-family='Arial Black, Arial, sans-serif' font-size='42' font-weight='900' text-anchor='middle' fill='%23c6ff3c'%3EN%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/nexus.css" />
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="index.html" class="logo"><span>NE<span class="x">X</span>US<small>Clinic</small></span></a>
+    <div class="nav-links">
+      <a href="index.html#services">Treatments</a>
+      <a href="index.html#reviews">Reviews</a>
+      <a href="index.html#team">Team</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <a href="index.html" class="btn">Home</a>
+    </div>
+  </div>
+</nav>
+
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="eyebrow">Your Nexus account</div>
+      <h1 id="authTitle">Welcome back</h1>
+      <p id="authLede">Sign in to book a session and track your rewards.</p>
+    </div>
+
+    <div class="auth-tabs" id="authTabs">
+      <button class="active" data-tab="login">Sign in</button>
+      <button data-tab="register">Create account</button>
+    </div>
+
+    <!-- SIGN IN -->
+    <form class="auth-form active" id="loginForm" data-form="login" novalidate>
+      <div class="field">
+        <label>Email or phone number</label>
+        <input type="text" id="liId" autocomplete="username" placeholder="you@email.com  ·  or  ·  010 xxxx xxxx" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="liPass" autocomplete="current-password" placeholder="Your password" />
+      </div>
+      <div class="auth-msg" id="loginMsg"></div>
+      <button type="submit" class="btn block" id="loginBtn">Sign in</button>
+      <p class="auth-switch">New here? <a href="#" data-goto="register">Create an account →</a></p>
+    </form>
+
+    <!-- REGISTER -->
+    <form class="auth-form" id="registerForm" data-form="register" novalidate>
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" id="rgName" autocomplete="name" placeholder="e.g. Mariam Hassan" />
+      </div>
+      <div class="field">
+        <label>WhatsApp / phone number</label>
+        <input type="tel" id="rgPhone" autocomplete="tel" inputmode="tel" placeholder="010 xxxx xxxx" />
+        <span class="hint">Required — we confirm bookings and track your loyalty on this number. One account per number.</span>
+      </div>
+      <div class="field">
+        <label>Email <span class="opt">(optional)</span></label>
+        <input type="email" id="rgEmail" autocomplete="email" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="rgPass" autocomplete="new-password" placeholder="At least 6 characters" />
+      </div>
+      <div class="auth-msg" id="registerMsg"></div>
+      <button type="submit" class="btn block" id="registerBtn">Create account</button>
+      <p class="auth-switch">Already have an account? <a href="#" data-goto="login">Sign in →</a></p>
+    </form>
+
+    <p class="auth-note">Your details stay on this device. <a href="index.html">Back to site</a></p>
+  </div>
+</main>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/login.js"></script>
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

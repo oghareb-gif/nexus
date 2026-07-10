@@ -1,0 +1,12 @@
+{
+  "name": "nexus-clinic",
+  "version": "1.0.0",
+  "description": "Nexus Physio Clinic website + booking API (zero dependencies)",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

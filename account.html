@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My account — Nexus Clinic</title>
+<meta name="description" content="Your Nexus Clinic account — upcoming reservations, visit history and loyalty progress." />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070a08'/%3E%3Ctext x='32' y='47' font-family='Arial Black, Arial, sans-serif' font-size='42' font-weight='900' text-anchor='middle' fill='%23c6ff3c'%3EN%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/nexus.css" />
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="index.html" class="logo"><span>NE<span class="x">X</span>US<small>Clinic</small></span></a>
+    <div class="nav-links">
+      <a href="index.html#services">Treatments</a>
+      <a href="index.html#reviews">Reviews</a>
+      <a href="index.html#team">Team</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <button class="ghost" id="logoutBtn" style="padding:11px 16px;">Sign out</button>
+      <a href="book.html" class="btn">Book a session</a>
+    </div>
+  </div>
+</nav>
+
+<main class="account-page">
+  <header class="account-hero">
+    <div>
+      <div class="eyebrow">Your Nexus account</div>
+      <h1 id="acHello">Hello</h1>
+      <p id="acContact" class="mono"></p>
+    </div>
+    <a href="book.html" class="btn lg" id="acBookBtn">+ Book a session</a>
+  </header>
+
+  <!-- Top cards: loyalty + stats -->
+  <div class="account-grid">
+    <section class="account-card loyalty-card" id="loyaltyCard"></section>
+    <section class="account-card stats-card">
+      <h3>Your history</h3>
+      <div class="stat-row" id="acStats"></div>
+    </section>
+  </div>
+
+  <!-- Upcoming reservations -->
+  <section class="account-card">
+    <div class="dp-head">
+      <h3>Upcoming reservations</h3>
+      <span class="count" id="upcomingMeta"></span>
+    </div>
+    <div id="upcomingList"></div>
+  </section>
+
+  <!-- Past visits -->
+  <section class="account-card">
+    <div class="dp-head">
+      <h3>Past & cancelled</h3>
+      <span class="count" id="pastMeta"></span>
+    </div>
+    <div id="pastList"></div>
+  </section>
+</main>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/whatsapp.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/account.js"></script>
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

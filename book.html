@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Book a Session — Nexus Clinic</title>
+<meta name="description" content="Book your physiotherapy session at Nexus Clinic, Heliopolis. Pick a treatment, therapist and time — confirmed instantly on WhatsApp." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070a08'/%3E%3Ctext x='32' y='47' font-family='Arial Black, Arial, sans-serif' font-size='42' font-weight='900' text-anchor='middle' fill='%23c6ff3c'%3EN%3C/text%3E%3C/svg%3E" />
+
+<!-- Social sharing (WhatsApp / Facebook / Twitter link previews) -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Nexus Clinic" />
+<meta property="og:title" content="Book a Session — Nexus Clinic" />
+<meta property="og:description" content="Pick a treatment, therapist and time — booked in under a minute, confirmed on WhatsApp." />
+<meta property="og:image" content="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/nexus.css" />
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="index.html" class="logo"><span>NE<span class="x">X</span>US<small>Clinic</small></span></a>
+    <div class="nav-links">
+      <a href="index.html#services">Treatments</a>
+      <a href="index.html#reviews">Reviews</a>
+      <a href="index.html#team">Team</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+    <div class="nav-actions">
+      <a href="#" id="waNav" class="ghost" style="padding:11px 16px;" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="index.html" class="btn">Home</a>
+    </div>
+  </div>
+</nav>
+
+<main class="booking-page">
+  <div class="booking-head">
+    <h1>Book your session</h1>
+    <p>Four quick steps. Just confirm — we'll take it from there.</p>
+  </div>
+
+  <!-- Reservation-cap gate (shown when the account already has the max) -->
+  <div id="bookGate"></div>
+
+  <!-- Everything inside #bookFlow is hidden if the account is at its cap -->
+  <div id="bookFlow">
+
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="st active" data-step="1"><span class="dot">1</span><span class="lbl">Treatment</span><span class="bar"></span></div>
+    <div class="st" data-step="2"><span class="dot">2</span><span class="lbl">Therapist</span><span class="bar"></span></div>
+    <div class="st" data-step="3"><span class="dot">3</span><span class="lbl">Date &amp; Time</span><span class="bar"></span></div>
+    <div class="st" data-step="4"><span class="dot">4</span><span class="lbl">Your details</span><span class="bar"></span></div>
+  </div>
+
+  <!-- STEP 1: Treatment -->
+  <section class="step-panel active" data-panel="1">
+    <h2 class="step-title">Choose your treatment</h2>
+    <p class="step-desc">Not sure which fits? Pick <b>Full Assessment</b> — we'll diagnose and guide you.</p>
+    <div class="select-grid" id="serviceSelect"></div>
+    <div class="step-nav">
+      <span></span>
+      <button class="btn" id="next1">Continue</button>
+    </div>
+    <div class="step-hint" id="hint1"></div>
+  </section>
+
+  <!-- STEP 2: Therapist -->
+  <section class="step-panel" data-panel="2">
+    <h2 class="step-title">Choose your therapist</h2>
+    <p class="step-desc">Have a preference? Pick your specialist — or let us match you with the right one.</p>
+    <div class="therapist-grid" id="therapistSelect"></div>
+    <div class="step-nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="btn" id="next2">Continue</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: Date & Time -->
+  <section class="step-panel" data-panel="3">
+    <h2 class="step-title">Pick a date &amp; time</h2>
+    <p class="step-desc">We're open <span id="hoursLine"></span>. Choose a slot that works for you.</p>
+    <div class="datetime">
+      <div class="dt-block">
+        <label class="dt-label">Date</label>
+        <div class="day-scroll" id="dayScroll"></div>
+      </div>
+      <div class="dt-block">
+        <label class="dt-label" id="timeLabel">Time — pick a date first</label>
+        <div class="slot-grid" id="slotGrid"></div>
+      </div>
+    </div>
+    <div class="step-nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="btn" id="next3">Continue</button>
+    </div>
+    <div class="step-hint" id="hint3"></div>
+  </section>
+
+  <!-- STEP 4: Details + summary -->
+  <section class="step-panel" data-panel="4">
+    <h2 class="step-title">Your details</h2>
+    <p class="step-desc">We'll send your confirmation and reminders here on WhatsApp.</p>
+
+    <div id="loyaltyBanner"></div>
+
+    <div class="dt-grid">
+      <div>
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="fName" placeholder="e.g. Mariam Hassan" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label>WhatsApp number</label>
+          <input type="tel" id="fPhone" placeholder="010 xxxx xxxx" autocomplete="tel" inputmode="tel" />
+          <span class="hint">Egyptian mobile — we'll message you here to confirm.</span>
+        </div>
+        <div class="field">
+          <label>Anything we should know? (optional)</label>
+          <textarea id="fNote" rows="3" placeholder="Injury, referral, preferred language…"></textarea>
+        </div>
+      </div>
+
+      <div class="review-summary" id="summaryCard">
+        <h3>Booking summary</h3>
+        <div class="sum-row"><span class="k">Treatment</span><span class="v" id="sumService">—</span></div>
+        <div class="sum-row"><span class="k">Therapist</span><span class="v" id="sumTherapist">—</span></div>
+        <div class="sum-row"><span class="k">Date</span><span class="v" id="sumDate">—</span></div>
+        <div class="sum-row"><span class="k">Time</span><span class="v" id="sumTime">—</span></div>
+        <div class="sum-row"><span class="k">Duration</span><span class="v" id="sumDuration">—</span></div>
+        <div class="sum-total"><span class="k">Est. price</span><span class="v" id="sumPrice">—</span></div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="btn" id="confirmBtn">Confirm booking</button>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:14px;">Just confirm — your booking goes straight to the clinic and they'll reach out on WhatsApp to finalise your time. No extra steps.</p>
+  </section>
+
+  <!-- CONFIRMATION -->
+  <section class="step-panel" data-panel="5">
+    <div class="confirm-wrap">
+      <div class="confirm-check">✓</div>
+      <h1>You're booked in.</h1>
+      <p>Your booking is confirmed and sent to the clinic. A team member will message you on WhatsApp to finalise your time.</p>
+      <div class="ticket" id="confirmTicket">
+        <div class="ticket-top">
+          <div>
+            <h4 id="tkService">—</h4>
+            <div class="sub" id="tkTherapist">—</div>
+          </div>
+          <span class="status">Confirmed</span>
+        </div>
+        <div class="ticket-divider"></div>
+        <div class="ticket-grid">
+          <div><span class="k">Date</span><span class="v" id="tkDate">—</span></div>
+          <div><span class="k">Time</span><span class="v" id="tkTime">—</span></div>
+          <div><span class="k">Guest</span><span class="v" id="tkGuest">—</span></div>
+        </div>
+      </div>
+      <div id="loyaltyResult"></div>
+      <div class="confirm-actions">
+        <a href="account.html" class="btn block">Go to my account</a>
+        <a href="#" id="waConfirm" class="ghost" style="justify-content:center;" target="_blank" rel="noopener">Message the clinic on WhatsApp (optional)</a>
+      </div>
+      <p class="confirm-note">A team member will confirm your slot shortly. See you soon 💚</p>
+    </div>
+  </section>
+
+  </div><!-- /#bookFlow -->
+</main>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/whatsapp.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/book.js"></script>
+<script src="assets/js/nav.js"></script>
+</body>
+</html>
