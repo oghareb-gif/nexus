@@ -29,16 +29,28 @@
   const mq = window.matchMedia("(max-width: 900px)");
   let placement = "bar";
 
+  /* The primary CTA (Book a session / Home) stays visible in the bar on
+     mobile instead of hiding inside the drawer — booking is one tap away. */
+  const barCta = actions ? actions.querySelector(".btn") : null;
+
   function toBar() {
     if (placement === "bar") return;
     if (links) wrap.insertBefore(links, toggle);
     if (actions) wrap.insertBefore(actions, toggle);
+    if (barCta) {
+      barCta.classList.remove("nav-bar-cta");
+      actions.appendChild(barCta);
+    }
     placement = "bar";
   }
   function toDrawer() {
     if (placement === "drawer") return;
     if (links) drawer.appendChild(links);
     if (actions) drawer.appendChild(actions);
+    if (barCta) {
+      barCta.classList.add("nav-bar-cta");
+      wrap.insertBefore(barCta, toggle);
+    }
     placement = "drawer";
   }
   function close() {

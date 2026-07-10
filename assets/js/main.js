@@ -124,11 +124,10 @@
   $("#reviewThemes").innerHTML = N.reviewThemes
     .map((t) => `<span class="chip lime">“${t}”</span>`)
     .join("");
-  $("#reviewsCta").href = N.brand.mapsUrl;
-  $("#reviewsCta").textContent = `Read all ${N.proof.googleReviews} reviews on Google →`;
-  $("#reviewsBelt").innerHTML = N.reviews
-    .map(
-      (r) => `
+  $("#reviewsBelt").innerHTML =
+    N.reviews
+      .map(
+        (r) => `
     <div class="review-card reveal">
       <div class="stars">${"★".repeat(r.stars)}</div>
       <p>“${r.text}”</p>
@@ -137,8 +136,15 @@
         <span class="src"><span class="verified">✓</span> ${r.source}</span>
       </div>
     </div>`
-    )
-    .join("");
+      )
+      .join("") +
+    `
+    <a class="review-card review-cta reveal" href="${N.brand.mapsUrl}" target="_blank" rel="noopener">
+      <span class="rc-score">${N.proof.googleRating.toFixed(1)}</span>
+      <span class="rc-stars">★★★★★</span>
+      <span class="rc-txt">Read all ${N.proof.googleReviews} reviews on Google →</span>
+      <span class="rc-sub">Verified · never edited</span>
+    </a>`;
 
   /* ---- Team ---- */
   $("#teamGrid").innerHTML = N.team
