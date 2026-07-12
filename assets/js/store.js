@@ -86,6 +86,27 @@
       return record;
     },
 
+    /* Bulk insert (used by the calendar's .ics import) — one write, not N. */
+    async addMany(records) {
+      if (await probeBackend()) {
+        try {
+          for (const r of records) {
+            await fetch(`${API_BASE}/bookings`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(r),
+            });
+          }
+          return;
+        } catch {
+          /* fall through to localStorage */
+        }
+      }
+      const list = readLS();
+      list.push(...records);
+      writeLS(list);
+    },
+
     /* All bookings, newest first. */
     async getBookings() {
       if (await probeBackend()) {

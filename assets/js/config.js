@@ -261,6 +261,29 @@ window.NEXUS = {
     currency: "EGP",
   },
 
+  /* --- WhatsApp automation ---
+     Powers the dashboard's WhatsApp view: a booking-confirmation message for
+     every new booking, and a reminder that fires when a session is about an
+     hour away (reminderMinutes). Placeholders: {name} {service} {therapist}
+     {date} {time}.
+     TODAY (semi-automatic): each due message is one tap — it opens WhatsApp
+     pre-written, the owner just hits send.
+     FULL AUTO needs the WhatsApp Business API (Meta Cloud API or Twilio) +
+     a server — see WHATSAPP-SETUP.md. Once connected, set provider below and
+     the same templates are sent with no tapping. */
+  whatsapp: {
+    reminderMinutes: 60,
+    templates: {
+      confirm:
+        "Hi {name}! 👋 This is Nexus Physio Clinic.\nYour booking is confirmed ✅\n• {service} with {therapist}\n• {date} at {time}\n📍 31 El-Imam Ali St, Almazah, Heliopolis\nSee you then! 💚",
+      reminder:
+        "Hi {name}! ⏰ Reminder from Nexus Physio Clinic — your {service} with {therapist} is today at {time} (about an hour from now).\nPlease reply *CONFIRM* so we hold your slot 💚",
+    },
+    api: {
+      provider: "",   // "" = not connected · "meta" or "twilio" once set up
+    },
+  },
+
   /* --- Customer accounts ---
      Sign-in is required to book. Each customer gets their own page with their
      bookings + loyalty. maxActiveReservations caps how many upcoming (not yet

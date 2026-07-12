@@ -19,6 +19,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const whatsapp = require("./whatsapp"); // auto-send once WA_PROVIDER env vars are set
 
 const PORT = process.env.PORT || 3000;
 const ROOT = path.join(__dirname, "..");          // serve the nexus/ folder
@@ -84,6 +85,17 @@ const server = http.createServer(async (req, res) => {
   if (url.startsWith("/api/")) {
     if (url === "/api/health") return send(res, 200, { ok: true, mode: "server" });
 
+    // WhatsApp Business API inbound webhook (Meta Cloud API)
+    if (url === "/api/wa-webhook" && req.method === "GET") {
+      const q = Object.fromEntries(new URL(req.url, "http://x").searchParams);
+      return whatsapp.verifyWebhook(q, res);
+    }
+    if (url === "/api/wa-webhook" && req.method === "POST") {
+      const payload = await body(req);
+      whatsapp.handleInbound(payload, readDB(), writeDB);
+      return send(res, 200, { ok: true });
+    }
+
     if (url === "/api/bookings" && req.method === "GET") {
       const list = readDB().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       return send(res, 200, list);
@@ -124,4 +136,7 @@ server.listen(PORT, () => {
   console.log(`  → Site:      http://localhost:${PORT}`);
   console.log(`  → Dashboard: http://localhost:${PORT}/dashboard.html`);
   console.log(`  → Data file: ${DB}\n`);
+  // Confirmations + 1-hour reminders, fully automatic once the
+  // WhatsApp Business API env vars are set (see WHATSAPP-SETUP.md).
+  whatsapp.startLoop(readDB);
 });

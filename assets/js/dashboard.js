@@ -48,7 +48,9 @@
   /* ---------- Sidebar nav labels ---------- */
   const navItems = [
     { view: "overview", label: "Overview", icon: "grid" },
-    { view: "appointments", label: "Appointments", icon: "calendar" },
+    { view: "calendar", label: "Calendar", icon: "calendar" },
+    { view: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
+    { view: "appointments", label: "Appointments", icon: "clipboard" },
     { view: "clients", label: "Clients", icon: "users" },
     { view: "members", label: "Members", icon: "users" },
     { view: "loyalty", label: "Loyalty", icon: "gift" },
@@ -283,7 +285,8 @@
       b.date === todayISO()
         ? "Today"
         : when.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    const waUrl = WA.chatLink(
+    const waUrl = WA.chatLinkTo(
+      b.phone,
       `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! 💚`
     );
     const rewardTag = b.isReward ? ' <span class="badge reward">🎁 Reward</span>' : "";
@@ -323,7 +326,8 @@
      Upcoming sessions grouped by day — Today first, then Tomorrow, then the
      rest of the week — each day sorted by time. */
   function schedRow(b) {
-    const waUrl = WA.chatLink(
+    const waUrl = WA.chatLinkTo(
+      b.phone,
       `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! 💚`
     );
     return `
@@ -426,7 +430,7 @@
     const clients = Store.clientsFrom(bookings).sort((a, b) => b.visits - a.visits);
     $("#clientCount").textContent = `${clients.length} total`;
     const rows = clients.map((c) => {
-      const waUrl = WA.chatLink(`Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} 👋`);
+      const waUrl = WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} 👋`);
       return `<tr>
         <td class="who"><b>${c.name}</b><span>${c.phone}</span></td>
         <td>${c.visits} visit${c.visits === 1 ? "" : "s"} ${clientTypeBadge(c.phoneKey)}</td>
@@ -459,7 +463,7 @@
         cap.atCap
           ? `<span class="badge" style="color:var(--gold);border-color:var(--gold);">${cap.count}/${cap.max} · full</span>`
           : `<span class="badge">${cap.count}/${cap.max} active</span>`;
-      const waUrl = u.phone ? WA.chatLink(`Hi ${u.name.split(" ")[0]}, this is ${N.brand.name} 👋`) : "#";
+      const waUrl = u.phone ? WA.chatLinkTo(u.phone, `Hi ${u.name.split(" ")[0]}, this is ${N.brand.name} 👋`) : "#";
       return `<tr>
         <td class="who"><b>${u.name}</b><span>${contact}</span></td>
         <td>${mine.length} booking${mine.length === 1 ? "" : "s"}</td>
@@ -490,11 +494,15 @@
     $$("#dashNav a").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
     $("#overviewCols").style.display = view === "overview" ? "grid" : "none";
     $("#chartGrid").style.display = view === "overview" ? "grid" : "none";
+    $("#calendarPanel").style.display = view === "calendar" ? "block" : "none";
+    $("#whatsappPanel").style.display = view === "whatsapp" ? "block" : "none";
     $("#appointmentsPanel").style.display = view === "appointments" ? "block" : "none";
     $("#clientsPanel").style.display = view === "clients" ? "block" : "none";
     $("#membersPanel").style.display = view === "members" ? "block" : "none";
     $("#loyaltyPanel").style.display = view === "loyalty" ? "block" : "none";
     $("#kpiGrid").style.display = view === "overview" ? "grid" : "none";
+    if (view === "calendar" && window.NexusCalendar) NexusCalendar.render();
+    if (view === "whatsapp" && window.NexusWaAuto) NexusWaAuto.render();
     if (view === "appointments") renderAppointments();
     if (view === "clients") renderClients();
     if (view === "members") renderMembers();
@@ -608,7 +616,42 @@
         { h: "Visits", f: (b) => b.visits },
         { h: `Revenue (${N.booking.currency})`, f: (b) => b.rev },
       ]));
+    } else if (kind === "ics") {
+      exportICS();
     }
+  }
+
+  /* ---------- .ics export — open the schedule in any calendar app ---------- */
+  function exportICS() {
+    const icsEsc = (s) => String(s ?? "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const stamp = (d) =>
+      `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}00`;
+    const dur = N.booking.slotMinutes || 45;
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Nexus Physio Clinic//Dashboard//EN", "X-WR-CALNAME:Nexus Clinic"];
+    bookings
+      .filter((b) => b.status !== "cancelled" && b.date)
+      .forEach((b) => {
+        const start = new Date(`${b.date}T${b.time || "12:00"}`);
+        const end = new Date(start.getTime() + dur * 60000);
+        lines.push(
+          "BEGIN:VEVENT",
+          `UID:${b.id}@nexusphysioclinic`,
+          `DTSTAMP:${stamp(new Date())}`,
+          `DTSTART:${stamp(start)}`,
+          `DTEND:${stamp(end)}`,
+          `SUMMARY:${icsEsc(`${b.name} — ${b.serviceName}${b.therapistName ? " (" + b.therapistName + ")" : ""}`)}`,
+          `DESCRIPTION:${icsEsc([b.phone, b.isReward ? "Reward session" : `${b.price || 0} ${N.booking.currency}`, b.status, b.note].filter(Boolean).join(" · "))}`,
+          "END:VEVENT"
+        );
+      });
+    lines.push("END:VCALENDAR");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" }));
+    a.download = `nexus-calendar-${todayISO()}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
   const exportWrap = $("#exportWrap");
@@ -705,9 +748,34 @@
     renderKPIs();
     renderCharts();
     renderOverview();
+    if (window.NexusCalendar) NexusCalendar.render();
+    if (window.NexusWaAuto) {
+      NexusWaAuto.render();
+      updateWaBadge();
+    }
     const active = $$("#dashNav a").find((a) => a.classList.contains("active"));
     if (active && active.dataset.view !== "overview") setView(active.dataset.view);
   }
+
+  /* Due-message count bubble on the WhatsApp nav item. */
+  function updateWaBadge() {
+    const a = $$("#dashNav a").find((x) => x.dataset.view === "whatsapp");
+    if (!a) return;
+    let badge = a.querySelector(".nav-badge");
+    const n = NexusWaAuto.dueCount();
+    if (!badge) {
+      badge = document.createElement("b");
+      badge.className = "nav-badge";
+      a.appendChild(badge);
+    }
+    badge.textContent = n;
+    badge.style.display = n > 0 ? "" : "none";
+  }
+
+  if (window.NexusCalendar)
+    NexusCalendar.init({ getBookings: () => bookings, onChanged: refresh });
+  if (window.NexusWaAuto)
+    NexusWaAuto.init({ getBookings: () => bookings, onChanged: refresh });
 
   refresh();
 })();

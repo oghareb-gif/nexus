@@ -63,5 +63,14 @@
         text || `Hi ${window.NEXUS.brand.name}, I have a question.`
       );
     },
+    /* Link to a CLIENT's number (owner dashboard -> customer). Accepts local
+       Egyptian numbers (01xxxxxxxxx) or full international, normalizes both. */
+    chatLinkTo(phone, text) {
+      let d = String(phone || "").replace(/[^\d]/g, "");
+      if (d.startsWith("00")) d = d.slice(2);
+      if (d.startsWith("0")) d = "20" + d.slice(1);      // 01x… -> 201x…
+      else if (d.length === 10 && d.startsWith("1")) d = "20" + d;
+      return link(d, text || "");
+    },
   };
 })();
