@@ -110,6 +110,12 @@
   });
 
   /* ---------- Step 3: date & time ---------- */
+  const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const nowMinutes = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
+  // The last bookable slot today starts 30 min before closing; once that has
+  // passed, today is over — no booking sessions in the past.
+  const todayIsDone = () => nowMinutes() >= N.booking.closeHour * 60 - 30;
+
   function buildDays() {
     const wrap = $("#dayScroll");
     const days = [];
@@ -118,7 +124,8 @@
     for (let i = 0; added < 14 && i < N.booking.daysAheadBookable + 14; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      const closed = N.booking.closedWeekdays.includes(d.getDay());
+      const closed =
+        N.booking.closedWeekdays.includes(d.getDay()) || (i === 0 && todayIsDone());
       days.push({ d, closed });
       if (!closed) added++;
     }
@@ -158,10 +165,21 @@
       slots.push(`${String(h).padStart(2, "0")}:00`);
       slots.push(`${String(h).padStart(2, "0")}:30`);
     }
+    // When today is selected, times that have already passed (plus a 30-min
+    // lead so no one books a session starting in 2 minutes) are greyed out.
+    const isToday = state.date === localISO(new Date());
+    const cutoff = nowMinutes() + 30;
+    const past = (t) => {
+      const [h, m] = t.split(":").map(Number);
+      return isToday && h * 60 + m < cutoff;
+    };
     grid.innerHTML = slots
-      .map((t) => `<button type="button" class="slot" data-time="${t}">${WA.fmtTime12(t)}</button>`)
+      .map((t) => {
+        const off = past(t);
+        return `<button type="button" class="slot${off ? " off" : ""}" data-time="${t}" ${off ? "disabled" : ""}>${WA.fmtTime12(t)}</button>`;
+      })
       .join("");
-    $$("#slotGrid .slot").forEach((s) => {
+    $$("#slotGrid .slot:not(.off)").forEach((s) => {
       s.addEventListener("click", () => {
         $$("#slotGrid .slot").forEach((x) => x.classList.remove("sel"));
         s.classList.add("sel");

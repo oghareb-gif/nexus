@@ -130,6 +130,32 @@
       writeLS(readLS().filter((b) => b.id !== id));
     },
 
+    /* Patch arbitrary fields on a booking (used by the owner edit form). */
+    async updateBooking(id, patch) {
+      // keep phoneKey in sync if the phone changed
+      if (patch.phone != null) patch.phoneKey = normalizePhone(patch.phone);
+      if (patch.price != null) patch.price = Number(patch.price) || 0;
+      if (await probeBackend()) {
+        try {
+          const r = await fetch(`${API_BASE}/bookings/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patch),
+          });
+          if (r.ok) return await r.json();
+        } catch {
+          /* fall through */
+        }
+      }
+      const list = readLS();
+      const b = list.find((x) => x.id === id);
+      if (b) {
+        Object.assign(b, patch);
+        writeLS(list);
+      }
+      return b;
+    },
+
     async updateStatus(id, status) {
       if (await probeBackend()) {
         try {

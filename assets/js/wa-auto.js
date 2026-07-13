@@ -24,6 +24,7 @@
    ========================================================================== */
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
+  const $$all = (s, r = document) => [...r.querySelectorAll(s)];
   const LOG_KEY = "nexus_wa_log_v1";       // { "<bookingId>:confirm": ts, ... }
   const TPL_KEY = "nexus_wa_templates_v1"; // owner-edited template overrides
 
@@ -190,42 +191,62 @@
         "Nothing else scheduled for today."
       )}
 
-      <div class="waq-section">
+      <hr class="wa-divider" />
+
+      <div class="waq-section wa-templates">
         <div class="waq-head"><div><h4>Message templates</h4>
-          <span>Placeholders: {name} {service} {therapist} {date} {time} — saved on this device</span></div></div>
-        <div class="wa-tpl-grid">
-          <label>Confirmation<textarea id="waTplConfirm" rows="6">${esc(t.confirm)}</textarea></label>
-          <label>Reminder (1 h before)<textarea id="waTplReminder" rows="6">${esc(t.reminder)}</textarea></label>
-        </div>
-        <div class="wa-tpl-preview">
-          <span class="wtp-label">Preview with a real booking:</span>
-          <pre id="waTplPreview">${esc(renderTpl(t.confirm, sample))}</pre>
-        </div>
-        <div class="wa-tpl-actions">
-          <button class="btn" id="waTplSave">Save templates</button>
-          <button class="ghost" id="waTplReset">Reset to defaults</button>
-          <span class="waq-saved" id="waTplMsg"></span>
-        </div>
+          <span>Placeholders: {name} {service} {therapist} {date} {time} — each template is edited and saved on its own</span></div></div>
+        ${tplCard("confirm", "Booking confirmation", "sent right after a booking", t.confirm, sample)}
+        ${tplCard("reminder", "Reminder", "sent about an hour before the session", t.reminder, sample)}
       </div>`;
 
-    $("#waTplConfirm").addEventListener("input", () => {
-      $("#waTplPreview").textContent = renderTpl($("#waTplConfirm").value, sample);
+    // one card per template — each with its own live preview + save/reset
+    $$all("[data-tpl]").forEach((ta) => {
+      ta.addEventListener("input", () => {
+        const kind = ta.dataset.tpl;
+        const pre = $(`[data-tpl-preview="${kind}"]`);
+        if (pre) pre.textContent = renderTpl(ta.value, sample);
+      });
     });
-    $("#waTplReminder").addEventListener("input", () => {
-      $("#waTplPreview").textContent = renderTpl($("#waTplReminder").value, sample);
+    $$all("[data-tpl-save]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = btn.dataset.tplSave;
+        const ta = $(`[data-tpl="${kind}"]`);
+        let ov = {};
+        try { ov = JSON.parse(localStorage.getItem(TPL_KEY)) || {}; } catch {}
+        ov[kind] = ta.value.trim();
+        localStorage.setItem(TPL_KEY, JSON.stringify(ov));
+        const msg = $(`[data-tpl-msg="${kind}"]`);
+        if (msg) { msg.textContent = "Saved ✓"; setTimeout(() => { msg.textContent = ""; }, 2500); }
+      });
     });
-    $("#waTplSave").addEventListener("click", () => {
-      localStorage.setItem(TPL_KEY, JSON.stringify({
-        confirm: $("#waTplConfirm").value.trim(),
-        reminder: $("#waTplReminder").value.trim(),
-      }));
-      $("#waTplMsg").textContent = "Saved ✓";
-      setTimeout(() => { const m = $("#waTplMsg"); if (m) m.textContent = ""; }, 2500);
+    $$all("[data-tpl-reset]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = btn.dataset.tplReset;
+        let ov = {};
+        try { ov = JSON.parse(localStorage.getItem(TPL_KEY)) || {}; } catch {}
+        delete ov[kind];
+        localStorage.setItem(TPL_KEY, JSON.stringify(ov));
+        render();
+      });
     });
-    $("#waTplReset").addEventListener("click", () => {
-      localStorage.removeItem(TPL_KEY);
-      render();
-    });
+  }
+
+  /* One standalone, self-contained template editor card. */
+  function tplCard(kind, label, when, value, sample) {
+    return `
+      <div class="wa-tpl-card" data-tpl-card="${kind}">
+        <div class="wtc-head"><h5>${label}</h5><span class="wtc-when">${when}</span></div>
+        <textarea data-tpl="${kind}" rows="5">${esc(value)}</textarea>
+        <div class="wtc-foot">
+          <pre data-tpl-preview="${kind}">${esc(renderTpl(value, sample))}</pre>
+        </div>
+        <div class="wtc-foot">
+          <button class="btn sm" data-tpl-save="${kind}">Save</button>
+          <button class="ghost" data-tpl-reset="${kind}">Reset to default</button>
+          <span class="waq-saved" data-tpl-msg="${kind}"></span>
+        </div>
+      </div>`;
   }
 
   /* ---------- badge ---------- */

@@ -171,8 +171,8 @@ nav .wrap {
    Rebuilt from the clinic's own logo file. The X is an inline SVG so the
    green accent stroke stays razor sharp at any size. */
 .wm { display: inline-flex; flex-direction: column; line-height: 1; color: #fff; }
-.wm-row { display: inline-flex; align-items: center; font-family: "Montserrat", "Inter", sans-serif; font-weight: 600; font-size: 0.85em; letter-spacing: 0.04em; line-height: 1; }
-.wm-x { height: 0.7em; width: auto; display: block; margin: 0 0.05em; color: #fff; }
+.wm-row { display: inline-flex; align-items: center; font-family: "Montserrat", "Inter", sans-serif; font-weight: 700; font-size: 0.85em; letter-spacing: 0.02em; line-height: 1; }
+.wm-x { height: 0.72em; width: auto; display: block; margin: 0 0.04em; color: #fff; }
 .wm-clinic { align-self: flex-end; font-family: "Montserrat", "Inter", sans-serif; font-style: normal; font-weight: 300; font-size: 0.3em; letter-spacing: 0.13em; margin-top: 0.14em; color: #fff; }
 .logo small {
   font-family: "JetBrains Mono", monospace;
@@ -744,6 +744,8 @@ footer { border-top: 1px solid var(--line); padding: 60px 0 40px; }
 .slot { border: 1px solid var(--surface-line); background: var(--surface); color: var(--paper); padding: 12px 6px; text-align: center; cursor: pointer; font-family: "JetBrains Mono", monospace; font-size: 0.8rem; transition: all 0.18s; }
 .slot:hover { background: var(--surface-2); border-color: var(--lime); }
 .slot.sel { border-color: var(--lime); background: var(--lime); color: #0a0d08; font-weight: 700; }
+.slot.off { opacity: 0.28; cursor: not-allowed; }
+.slot.off:hover { background: var(--surface); border-color: var(--surface-line); }
 
 /* Loyalty banner in booking */
 .loyalty-banner {
@@ -1276,6 +1278,15 @@ table.dash-table { width: 100%; border-collapse: collapse; }
 .cm-stat { flex: 1; min-width: 132px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
 .cm-stat .n { font-family: "Anton", sans-serif; font-size: 1.45rem; color: var(--lime); line-height: 1; }
 .cm-stat .l { font-family: "JetBrains Mono", monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mute); margin-top: 6px; }
+.cm-subhead { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); font-family: "JetBrains Mono", monospace; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.cm-none { font-size: 0.84rem; color: var(--faint); margin: 4px 0 8px; }
+.rev-break { display: flex; flex-direction: column; gap: 9px; margin: 4px 0 6px; }
+.rb-row { display: grid; grid-template-columns: minmax(90px, 160px) 1fr auto; gap: 14px; align-items: center; }
+.rb-l { font-size: 0.84rem; color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-bar { height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 100px; overflow: hidden; }
+.rb-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--lime-deep), var(--lime)); border-radius: 100px; }
+.rb-v { font-family: "JetBrains Mono", monospace; font-size: 0.72rem; color: var(--mute); white-space: nowrap; }
+@media (max-width: 620px) { .rb-row { grid-template-columns: minmax(70px, 110px) 1fr auto; gap: 8px; } .rb-v { font-size: 0.66rem; } }
 table.cm-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 14px; }
 .cm-table th { text-align: left; font-family: "JetBrains Mono", monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); padding: 8px 10px; border-bottom: 1px solid var(--line); font-weight: 400; }
 .cm-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); }
@@ -1525,8 +1536,118 @@ table.cm-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; mar
 .wa-tpl-actions .ghost { padding: 10px 16px; font-size: 0.8rem; }
 .waq-saved { font-size: 0.78rem; color: var(--lime); }
 
+/* Standalone template card (one template per block, on its own line). */
+.wa-tpl-block { margin-top: 22px; }
+.wa-tpl-block + .wa-tpl-block { margin-top: 18px; }
+.wa-divider { height: 1px; background: var(--line); border: none; margin: 30px 0 4px; }
+.wa-tpl-card {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2);
+  padding: 18px 18px 16px; margin-bottom: 16px;
+}
+.wa-tpl-card .wtc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.wa-tpl-card .wtc-head h5 { font-size: 0.95rem; }
+.wa-tpl-card .wtc-when { font-family: "JetBrains Mono", monospace; font-size: 0.66rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.wa-tpl-card textarea {
+  width: 100%; font-family: "Inter", sans-serif; font-size: 0.86rem; line-height: 1.55; padding: 12px 13px;
+  border: 1px solid var(--line-2); background: var(--bg); color: var(--paper); border-radius: 6px; resize: vertical;
+}
+.wa-tpl-card textarea:focus { outline: none; border-color: var(--lime); }
+.wa-tpl-card .wtc-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.wa-tpl-card .wtc-foot .btn, .wa-tpl-card .wtc-foot .ghost { padding: 9px 15px; font-size: 0.78rem; }
+.wa-tpl-card pre {
+  flex: 1; min-width: 220px; margin: 0; padding: 12px 14px; background: #0b141a; border-radius: 8px;
+  border: 1px solid var(--line); border-left: 4px solid #25d366; font-family: "Inter", sans-serif;
+  font-size: 0.82rem; color: #e9edef; white-space: pre-wrap; line-height: 1.5;
+}
+
 @media (max-width: 760px) {
   .waq-item { flex-wrap: wrap; }
   .waq-actions { flex-direction: row; width: 100%; justify-content: flex-end; align-items: center; }
   .wa-tpl-grid { grid-template-columns: 1fr; }
+  .wa-tpl-card .wtc-foot pre { min-width: 0; }
+}
+
+/* ============================================================================
+   MANUAL ADD + CLIENT PROFILE CARD
+   Owner types phone-in bookings anywhere; taps a client to see everything.
+   ========================================================================== */
+.btn.sm { padding: 9px 15px; font-size: 0.78rem; }
+.dp-head-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.client-open { cursor: pointer; transition: color 0.15s; }
+.client-open:hover, .client-open:hover b { color: var(--lime); }
+tr:hover .client-open b { color: var(--lime); }
+.loyal-item.client-open:hover { background: rgba(198, 255, 60, 0.04); }
+
+/* toast */
+.nexus-toast {
+  position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 8px); z-index: 500;
+  background: var(--panel); border: 1px solid rgba(198, 255, 60, 0.45); color: var(--paper);
+  padding: 12px 22px; border-radius: 8px; font-size: 0.85rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; max-width: 90vw;
+}
+.nexus-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---- booking form extras (shared add / edit modal) ---- */
+.cf-grid .cf-wide { grid-column: 1 / -1; }
+.cf-check { display: flex; align-items: flex-start; gap: 9px; margin-top: 14px; font-size: 0.82rem; color: var(--mute); cursor: pointer; }
+.cf-check input { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--lime); }
+.bk-actions { margin-top: 18px; }
+
+/* ---- client profile card ---- */
+.client-modal { max-width: 720px; width: 100%; max-height: 88vh; overflow-y: auto; }
+.cc-hero { display: flex; gap: 16px; align-items: center; padding-right: 30px; }
+.cc-ava {
+  flex: none; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); color: var(--lime); font-family: "Anton", sans-serif; font-size: 1.35rem;
+  border: 1px solid var(--line-2); letter-spacing: 0.03em;
+}
+.cc-id { flex: 1; min-width: 0; }
+.cc-id h3 { font-size: 1.35rem; margin: 0 0 6px; }
+.cc-contact { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 0.82rem; color: var(--mute); }
+.cc-contact > span:not(.badge) { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; }
+.badge.new.badge, .cc-contact .badge { font-size: 0.58rem; }
+.cc-hero-actions { display: flex; flex-direction: column; gap: 8px; flex: none; align-items: stretch; }
+.cc-hero-actions .btn, .cc-hero-actions .ghost { padding: 9px 15px; font-size: 0.78rem; white-space: nowrap; }
+.wa-btn { display: inline-flex; align-items: center; gap: 8px; background: #25d366 !important; color: #06130a !important; border: none; }
+.wa-btn svg { width: 15px; height: 15px; }
+
+.cc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0 4px; }
+.cc-stat { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 13px 14px; }
+.cc-stat .n { font-family: "Anton", sans-serif; font-size: 1.4rem; line-height: 1; }
+.cc-stat .n.lime { color: var(--lime); }
+.cc-stat .l { font-family: "JetBrains Mono", monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mute); margin-top: 7px; }
+
+.cc-loyal { margin: 16px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.cc-loyal.ready { border-color: rgba(255, 209, 102, 0.5); background: rgba(255, 209, 102, 0.06); }
+.cc-loyal-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cc-loyal-top b { font-size: 0.88rem; }
+.cc-loyal.ready .cc-loyal-top b { color: var(--gold); }
+.cc-loyal-top span { font-family: "JetBrains Mono", monospace; font-size: 0.74rem; color: var(--mute); }
+
+.cc-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 2px; font-size: 0.78rem; color: var(--faint); }
+.cc-meta b { color: var(--paper); font-weight: 500; }
+
+.cc-history-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.cc-history-head h4 { font-size: 1rem; }
+.cc-history-head span { font-family: "JetBrains Mono", monospace; font-size: 0.7rem; color: var(--faint); }
+.cc-book {
+  display: grid; grid-template-columns: 86px 1fr auto auto auto; gap: 12px; align-items: center;
+  padding: 11px 4px; border-bottom: 1px solid var(--line);
+}
+.cc-book:last-child { border-bottom: none; }
+.cc-book.void { opacity: 0.5; }
+.cc-book-when b { display: block; font-size: 0.82rem; }
+.cc-book-when span { font-family: "JetBrains Mono", monospace; font-size: 0.68rem; color: var(--lime); }
+.cc-book-main b { display: block; font-size: 0.86rem; }
+.cc-book-main span { font-size: 0.74rem; color: var(--faint); }
+.cc-book-price { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: var(--mute); white-space: nowrap; }
+.cc-book-actions { display: flex; gap: 6px; }
+.cc-empty { padding: 18px 4px; font-size: 0.84rem; color: var(--faint); }
+
+@media (max-width: 620px) {
+  .cc-hero { flex-wrap: wrap; }
+  .cc-hero-actions { flex-direction: row; width: 100%; }
+  .cc-stats { grid-template-columns: repeat(2, 1fr); }
+  .cc-book { grid-template-columns: 70px 1fr auto; }
+  .cc-book-status, .cc-book-price { display: none; }
 }

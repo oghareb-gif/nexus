@@ -11,6 +11,9 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const money = (n) => `${Number(n).toLocaleString("en-US")} ${N.booking.currency}`;
+  // Escape user-typed values (client names, notes) before they land in the
+  // dashboard's HTML — a booking name must never be able to run script here.
+  const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   // Local-parts date string — toISOString() is UTC and reports the wrong
   // "today" between midnight and ~3 AM Egypt time.
   const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -72,6 +75,27 @@
   const dt = (b) => new Date(`${b.date}T${b.time || "00:00"}`);
   const isUpcoming = (b) => b.status !== "cancelled" && dt(b) >= new Date(Date.now() - 3600000);
   const initials = (name) => (name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+  /* Client name cell that opens the full profile card when tapped. Falls back
+     to a plain cell for imported / phone-less events (nothing to open). */
+  function clientCell(b) {
+    const key = b.phoneKey || "";
+    const inner = `<b>${esc(b.name)}</b><span>${esc(b.phone || "")}</span>`;
+    return key
+      ? `<td class="who client-open" data-client="${key}" title="See ${esc(b.name)}'s full profile">${inner}</td>`
+      : `<td class="who">${inner}</td>`;
+  }
+
+  /* ---------- Toast ---------- */
+  function toast(msg) {
+    let t = document.getElementById("nexusToast");
+    if (!t) { t = document.createElement("div"); t.id = "nexusToast"; t.className = "nexus-toast"; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove("show"), 3200);
+  }
+  window.NexusToast = toast;
 
   function clientTypeBadge(phoneKey) {
     const count = bookings.filter((b) => b.phoneKey === phoneKey && b.status !== "cancelled").length;
@@ -208,15 +232,58 @@
       const total = buckets.reduce((s, b) => s + b.rev, 0);
       const best = buckets.reduce((a, b) => (b.rev > a.rev ? b : a), buckets[0]);
       const avg = Math.round(total / buckets.length);
+
+      // "Where the money comes from" — all-time, paid (non-reward) bookings.
+      const paid = bookings.filter((b) => b.status !== "cancelled" && !b.isReward);
+      const allRev = paid.reduce((s, b) => s + (b.price || 0), 0);
+      const now = new Date();
+      const monthRev = paid
+        .filter((b) => { const d = new Date(b.date + "T00:00:00"); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); })
+        .reduce((s, b) => s + (b.price || 0), 0);
+
+      const agg = (keyFn) => {
+        const m = {};
+        paid.forEach((b) => { const k = keyFn(b) || "—"; (m[k] ||= { rev: 0, n: 0 }); m[k].rev += b.price || 0; m[k].n += 1; });
+        return Object.entries(m).map(([label, v]) => ({ label, rev: v.rev, n: v.n })).sort((a, b) => b.rev - a.rev);
+      };
+      const byTreatment = agg((b) => b.serviceName);
+      const byTherapist = agg((b) => b.therapistName);
+      const topClients = Store.clientsFrom(bookings)
+        .filter((c) => c.spend > 0)
+        .sort((a, b) => b.spend - a.spend).slice(0, 5)
+        .map((c) => ({ label: c.name, rev: c.spend }));
+
+      const share = (v) => (allRev ? Math.round((v / allRev) * 100) : 0);
+      const maxRev = (arr) => arr.reduce((m, x) => Math.max(m, x.rev), 0) || 1;
+      const breakList = (items, fmt) => {
+        const mx = maxRev(items);
+        return `<div class="rev-break">${items.map((it) => `
+          <div class="rb-row"><span class="rb-l">${esc(it.label)}</span>
+            <span class="rb-bar"><i style="width:${Math.round((it.rev / mx) * 100)}%"></i></span>
+            <span class="rb-v">${fmt(it)}</span></div>`).join("")}</div>`;
+      };
+
       body.innerHTML = `
-        <h3>Revenue — last 12 weeks</h3>
-        <p class="sub">Weekly totals from confirmed &amp; completed bookings. Free reward sessions excluded.</p>
+        <h3>Revenue — where it comes from</h3>
+        <p class="sub">Weekly trend plus the treatments, therapists and clients bringing the money in. Free reward sessions excluded.</p>
         ${Charts.bars(buckets.map((b) => ({ label: b.label, value: b.rev })), { unit: N.booking.currency })}
         <div class="cm-stats">
+          <div class="cm-stat"><div class="n">${money(monthRev)}</div><div class="l">This month so far</div></div>
           <div class="cm-stat"><div class="n">${money(total)}</div><div class="l">Total · 12 weeks</div></div>
           <div class="cm-stat"><div class="n">${money(avg)}</div><div class="l">Average / week</div></div>
           <div class="cm-stat"><div class="n">${money(best.rev)}</div><div class="l">Best week (${best.label})</div></div>
         </div>
+
+        <h4 class="cm-subhead">By treatment</h4>
+        ${byTreatment.length ? breakList(byTreatment, (it) => `${money(it.rev)} · ${share(it.rev)}%`) : '<p class="cm-none">No revenue yet.</p>'}
+
+        <h4 class="cm-subhead">By therapist</h4>
+        ${byTherapist.length ? breakList(byTherapist, (it) => `${money(it.rev)} · ${it.n} session${it.n === 1 ? "" : "s"}`) : '<p class="cm-none">No revenue yet.</p>'}
+
+        <h4 class="cm-subhead">Top clients by spend</h4>
+        ${topClients.length ? breakList(topClients, (it) => money(it.rev)) : '<p class="cm-none">No client spend yet.</p>'}
+
+        <h4 class="cm-subhead">Week by week</h4>
         <table class="cm-table"><thead><tr><th>Week starting</th><th class="num">Visits</th><th class="num">Revenue</th></tr></thead>
         <tbody>${buckets.map((b) => `<tr><td>${b.label}</td><td class="num">${b.visits}</td><td class="num">${money(b.rev)}</td></tr>`).join("")}</tbody></table>`;
     } else if (kind === "visits") {
@@ -260,7 +327,7 @@
         </div>
         <table class="cm-table"><thead><tr><th>Treatment</th><th class="num">Bookings</th><th class="num">Share</th><th class="num">Revenue</th></tr></thead>
         <tbody>${mixSegments
-          .map((m) => `<tr><td>${m.label}</td><td class="num">${m.value}</td><td class="num">${totalBookings ? Math.round((m.value / totalBookings) * 100) : 0}%</td><td class="num">${money(m.rev)}</td></tr>`)
+          .map((m) => `<tr><td>${esc(m.label)}</td><td class="num">${m.value}</td><td class="num">${totalBookings ? Math.round((m.value / totalBookings) * 100) : 0}%</td><td class="num">${money(m.rev)}</td></tr>`)
           .join("")}</tbody></table>`;
     }
     $("#chartModal").classList.add("show");
@@ -298,8 +365,8 @@
         : '<span class="badge confirmed">✓ Confirmed</span>';
     return `
       <tr>
-        <td class="who"><b>${b.name}</b><span>${b.phone}</span></td>
-        <td>${b.serviceName}${rewardTag}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${b.therapistName}</div></td>
+        ${clientCell(b)}
+        <td>${esc(b.serviceName)}${rewardTag}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${esc(b.therapistName)}</div></td>
         <td>${dateLabel}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${WA.fmtTime12(b.time)}</div></td>
         <td>${clientTypeBadge(b.phoneKey)} ${statusBadge}</td>
         <td style="text-align:right;white-space:nowrap;">
@@ -333,9 +400,9 @@
     return `
       <div class="sched-row">
         <span class="sched-time">${WA.fmtTime12(b.time)}</span>
-        <div class="sched-body">
-          <b>${b.name}${b.isReward ? " 🎁" : ""}</b>
-          <span>${b.serviceName} · ${b.therapistName}</span>
+        <div class="sched-body${b.phoneKey ? " client-open" : ""}"${b.phoneKey ? ` data-client="${b.phoneKey}" title="See ${esc(b.name)}'s full profile"` : ""}>
+          <b>${esc(b.name)}${b.isReward ? " 🎁" : ""}</b>
+          <span>${esc(b.serviceName)} · ${esc(b.therapistName)}</span>
         </div>
         <div class="sched-actions">
           <a class="icon-btn wa" href="${waUrl}" target="_blank" rel="noopener" title="Message on WhatsApp">${I.whatsapp}</a>
@@ -401,11 +468,11 @@
     const pct = L.rewardReady ? 100 : Math.round((L.cyclePos / L.threshold) * 100);
     const left = L.threshold - L.cyclePos;
     return `
-      <div class="loyal-item ${L.rewardReady ? "ready" : ""}">
-        <div class="li-ava">${initials(c.name)}</div>
+      <div class="loyal-item ${L.rewardReady ? "ready" : ""}${c.phoneKey ? " client-open" : ""}"${c.phoneKey ? ` data-client="${c.phoneKey}" title="See ${esc(c.name)}'s full profile"` : ""}>
+        <div class="li-ava">${esc(initials(c.name))}</div>
         <div class="li-main">
           <div class="li-top">
-            <b>${c.name}</b>
+            <b>${esc(c.name)}</b>
             <span class="v">${L.rewardReady ? L.threshold + " / " + L.threshold : L.cyclePos + " / " + L.threshold}</span>
           </div>
           <div class="progress"><i style="width:${pct}%"></i></div>
@@ -432,7 +499,7 @@
     const rows = clients.map((c) => {
       const waUrl = WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} 👋`);
       return `<tr>
-        <td class="who"><b>${c.name}</b><span>${c.phone}</span></td>
+        ${clientCell(c)}
         <td>${c.visits} visit${c.visits === 1 ? "" : "s"} ${clientTypeBadge(c.phoneKey)}</td>
         <td>${money(c.spend)}</td>
         <td>${c.loyalty.rewardReady ? '<span class="badge reward">🎁 Reward ready</span>' : c.loyalty.cyclePos + "/" + c.loyalty.threshold + " to reward"}</td>
@@ -465,7 +532,7 @@
           : `<span class="badge">${cap.count}/${cap.max} active</span>`;
       const waUrl = u.phone ? WA.chatLinkTo(u.phone, `Hi ${u.name.split(" ")[0]}, this is ${N.brand.name} 👋`) : "#";
       return `<tr>
-        <td class="who"><b>${u.name}</b><span>${contact}</span></td>
+        <td class="who${u.phoneKey ? " client-open" : ""}"${u.phoneKey ? ` data-client="${u.phoneKey}" title="See ${esc(u.name)}'s full profile"` : ""}><b>${esc(u.name)}</b><span>${esc(contact)}</span></td>
         <td>${mine.length} booking${mine.length === 1 ? "" : "s"}</td>
         <td>${capBadge}</td>
         <td>${L.rewardReady ? '<span class="badge reward">🎁 Reward ready</span>' : L.cyclePos + "/" + L.threshold + " to reward"}</td>
@@ -776,6 +843,24 @@
     NexusCalendar.init({ getBookings: () => bookings, onChanged: refresh });
   if (window.NexusWaAuto)
     NexusWaAuto.init({ getBookings: () => bookings, onChanged: refresh });
+  if (window.NexusBookingForm)
+    NexusBookingForm.init({ getBookings: () => bookings, refresh });
+  if (window.NexusClientCard)
+    NexusClientCard.init({ getBookings: () => bookings, refresh });
+
+  /* ---------- Manual add + open-client (works from every view) ----------
+     "New booking" in the topbar, "+ Add booking" in the appointments/clients
+     views, and "+ New booking" inside a client's card all open the same form —
+     so a phone-in booking can be typed anywhere. Tapping a client's name opens
+     their full profile. */
+  function openNewBooking() { if (window.NexusBookingForm) NexusBookingForm.open(); }
+  const newBtn = $("#newBookingBtn");
+  if (newBtn) newBtn.addEventListener("click", openNewBooking);
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-add-booking]")) { openNewBooking(); return; }
+    const c = e.target.closest("[data-client]");
+    if (c && c.dataset.client && window.NexusClientCard) NexusClientCard.open(c.dataset.client);
+  });
 
   refresh();
 })();

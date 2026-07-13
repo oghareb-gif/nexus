@@ -1,14 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="nxAccent" x1="0" y1="0" x2="0.45" y2="1">
-      <stop offset="0" stop-color="#04dd00"/>
-      <stop offset="0.5" stop-color="#3ce91b"/>
-      <stop offset="1" stop-color="#ace84e"/>
+    <linearGradient id="nxAccent" x1="0.4" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#2ec900"/>
+      <stop offset="1" stop-color="#bff24d"/>
     </linearGradient>
   </defs>
   <circle cx="50" cy="50" r="50" fill="#000"/>
   <circle cx="50" cy="50" r="46.6" fill="none" stroke="#f8f8f8" stroke-width="6"/>
-  <polygon fill="#f8f8f8" points="63.8,22 70.8,22 35.6,78 28.2,78"/>
-  <polygon fill="#f8f8f8" points="46.5,53.5 51.8,50.2 61.5,65.8 54.2,65.8"/>
-  <line x1="41.5" y1="28.9" x2="45.9" y2="37.6" stroke="url(#nxAccent)" stroke-width="5.6" stroke-linecap="round"/>
+  <line x1="50.5" y1="48.1" x2="60.9" y2="73.6" stroke="#f8f8f8" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="34.9" y1="73.6" x2="65" y2="26.3" stroke="#f8f8f8" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M40.3 27.9 A2.6 2.6 0 0 1 45.1 25.8 L50 43.5 Z" fill="url(#nxAccent)"/>
 </svg>

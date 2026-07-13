@@ -101,6 +101,13 @@
     $("#calImportFile").addEventListener("change", onImportFile);
 
     $("#calBody").addEventListener("click", (e) => {
+      // Tapping a client's name on the calendar opens their full profile card
+      // (and does NOT also select/drill the day underneath).
+      const nameChip = e.target.closest("[data-cal-client]");
+      if (nameChip && nameChip.dataset.calClient) {
+        if (window.NexusClientCard) window.NexusClientCard.open(nameChip.dataset.calClient);
+        return;
+      }
       const cell = e.target.closest("[data-day]");
       const ev = e.target.closest("[data-ev-day]");
       if (ev) { // week/day event chip -> jump to that day
@@ -188,7 +195,7 @@
         <span class="cal-d">${d.getDate()}</span>
         <div class="cal-evs">
           ${shown.map((b) => `
-            <span class="cal-ev ${b.status === "completed" ? "done" : ""}" style="--c:${colorFor(b)}">
+            <span class="cal-ev ${b.status === "completed" ? "done" : ""}${b.phoneKey ? " client-open" : ""}" style="--c:${colorFor(b)}"${b.phoneKey ? ` data-cal-client="${b.phoneKey}" title="See ${esc(b.name)}'s profile"` : ""}>
               <em>${b.time ? WA.fmtTime12(b.time).replace(" ", "") : "all-day"}</em> ${esc(b.name.split(" ")[0])}
             </span>`).join("")}
           ${extra > 0 ? `<span class="cal-more">+${extra} more</span>` : ""}
@@ -216,7 +223,7 @@
     return `
       <div class="cal-day-row ${b.status === "completed" ? "done" : ""}" style="--c:${colorFor(b)}">
         <span class="cd-time">${b.time ? WA.fmtTime12(b.time) : "All day"}</span>
-        <div class="cd-main">
+        <div class="cd-main${b.phoneKey ? " client-open" : ""}"${b.phoneKey ? ` data-client="${b.phoneKey}" title="See ${esc(b.name)}'s full profile"` : ""}>
           <b>${esc(b.name)}${b.isReward ? " 🎁" : ""}</b>
           <span>${esc(b.serviceName)}${b.therapistName ? " · " + esc(b.therapistName) : ""}${b.imported ? " · imported" : ""}</span>
         </div>
@@ -300,7 +307,7 @@
         const h = Math.max(20, (dur / 60) * HOUR - 3);
         const w = 100 / it.width;
         const b = it.b;
-        return `<div class="tg-ev ${b.status === "completed" ? "done" : ""}" data-ev-day="${iso}"
+        return `<div class="tg-ev ${b.status === "completed" ? "done" : ""}" data-ev-day="${iso}"${b.phoneKey ? ` data-cal-client="${b.phoneKey}" title="See ${esc(b.name)}'s profile"` : ""}
           style="--c:${colorFor(b)};top:${top}px;height:${h}px;left:${it.col * w}%;width:${w}%">
           <b>${WA.fmtTime12(b.time)}</b> ${esc(single ? b.name : b.name.split(" ")[0])}${single ? ` <span class="tg-sub">· ${esc(b.serviceName)}</span>` : ""}
         </div>`;
@@ -418,7 +425,25 @@
     });
   }
 
-  function openAdd(iso) {
+  function openAdd(iso, time) {
+    // Prefer the shared booking form (richer — status, reward, editing) so a
+    // walk-in / phone booking looks the same everywhere. Falls back to the
+    // built-in quick-add if the shared form isn't loaded.
+    if (window.NexusBookingForm) {
+      window.NexusBookingForm.open({
+        date: iso || todayISO(),
+        time: time || "16:00",
+        // Jump the calendar to wherever the booking actually landed.
+        onSaved(saved) {
+          if (saved && saved.date) {
+            selectedISO = saved.date;
+            anchor = fromISO(saved.date);
+            render();
+          }
+        },
+      });
+      return;
+    }
     ensureAddModal();
     $("#cfDate").value = iso || todayISO();
     $("#cfTime").value = "16:00";

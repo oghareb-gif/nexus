@@ -44,7 +44,9 @@ function writeDB(list) {
 const MIME = {
   ".html": "text/html", ".css": "text/css", ".js": "text/javascript",
   ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png",
-  ".jpg": "image/jpeg", ".ico": "image/x-icon",
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+  ".ico": "image/x-icon", ".ics": "text/calendar", ".txt": "text/plain",
+  ".woff": "font/woff", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 function send(res, code, body, type = "application/json") {
   res.writeHead(code, {
@@ -67,11 +69,18 @@ function body(req) {
 function serveStatic(req, res) {
   let rel = decodeURIComponent(req.url.split("?")[0]);
   if (rel === "/") rel = "/index.html";
-  const filePath = path.join(ROOT, rel);
-  if (!filePath.startsWith(ROOT)) return send(res, 403, "Forbidden", "text/plain");
+  const filePath = path.resolve(ROOT, "." + rel);
+  // Stay inside the site folder ("/x/nexus-evil" must not pass a bare
+  // startsWith("/x/nexus") check), and never expose the server/ folder —
+  // server/data/ holds every client's bookings and phone number.
+  if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep))
+    return send(res, 403, "Forbidden", "text/plain");
+  const serverDir = path.join(ROOT, "server");
+  if (filePath === serverDir || filePath.startsWith(serverDir + path.sep))
+    return send(res, 404, "Not found", "text/plain");
   fs.readFile(filePath, (err, data) => {
     if (err) return send(res, 404, "Not found", "text/plain");
-    send(res, 200, data, MIME[path.extname(filePath)] || "application/octet-stream");
+    send(res, 200, data, MIME[path.extname(filePath).toLowerCase()] || "application/octet-stream");
   });
 }
 
@@ -79,7 +88,14 @@ function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   const url = req.url.split("?")[0];
 
-  if (req.method === "OPTIONS") return send(res, 204, "");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
+    return res.end();
+  }
 
   // --- API ---
   if (url.startsWith("/api/")) {
@@ -103,6 +119,11 @@ const server = http.createServer(async (req, res) => {
     if (url === "/api/bookings" && req.method === "POST") {
       const rec = await body(req);
       const list = readDB();
+      // Ids come from the client; make sure every record has one and that a
+      // retried request (or a re-run .ics import) can't duplicate a booking.
+      if (!rec.id) rec.id = "bk_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      const existing = list.find((b) => b.id === rec.id);
+      if (existing) return send(res, 200, existing);
       list.push(rec);
       writeDB(list);
       return send(res, 201, rec);
