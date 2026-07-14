@@ -29,12 +29,15 @@ const path = require("path");
 const LOG = path.join(__dirname, "data", "wa-log.json"); // { "<id>:confirm": ts }
 const REMINDER_MINUTES = 60;
 
-/* ---------- message templates (keep in sync with assets/js/config.js) ---- */
+/* ---------- message templates (keep in sync with assets/js/config.js) ----
+   Emojis are written as escaped code points so the message stays correct no
+   matter how this file is saved/transferred/deployed (same rule as the
+   frontend templates in assets/js/config.js). */
 const TEMPLATES = {
   confirm:
-    "Hi {name}! 👋 This is Nexus Physio Clinic.\nYour booking is confirmed ✅\n• {service} with {therapist}\n• {date} at {time}\n📍 31 El-Imam Ali St, Almazah, Heliopolis\nSee you then! 💚",
+    "Hi {name}! \u{1F44B} This is Nexus Physio Clinic.\nYour booking is confirmed \u{2705}\n• {service} with {therapist}\n• {date} at {time}\n\u{1F4CD} 31 El-Imam Ali St, Almazah, Heliopolis\nSee you then! \u{1F49A}",
   reminder:
-    "Hi {name}! ⏰ Reminder from Nexus Physio Clinic — your {service} with {therapist} is today at {time} (about an hour from now).\nPlease reply *CONFIRM* so we hold your slot 💚",
+    "Hi {name}! \u{23F0} Reminder from Nexus Physio Clinic — your {service} with {therapist} is today at {time} (about an hour from now).\nPlease reply *CONFIRM* so we hold your slot \u{1F49A}",
 };
 
 function renderTemplate(tpl, b) {
@@ -42,9 +45,16 @@ function renderTemplate(tpl, b) {
   const dateLong = d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
   const [h, m] = (b.time || "0:0").split(":").map(Number);
   const time12 = `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+  // Multi-treatment bookings store every name in b.treatments (same shape as
+  // Store.getTreatments on the frontend); b.serviceName is the single-treatment
+  // fallback kept for older records.
+  const service =
+    Array.isArray(b.treatments) && b.treatments.length
+      ? b.treatments.join(", ")
+      : b.serviceName || "your session";
   return tpl
     .replace(/\{name\}/g, (b.name || "").split(" ")[0])
-    .replace(/\{service\}/g, b.serviceName || "your session")
+    .replace(/\{service\}/g, service)
     .replace(/\{therapist\}/g, b.therapistName || "our team")
     .replace(/\{date\}/g, dateLong)
     .replace(/\{time\}/g, time12);
@@ -207,7 +217,7 @@ function handleInbound(payload, bookings, saveBookings) {
     if (!msg || msg.type !== "text") return null;
     const from = msg.from; // international digits
     const text = (msg.text?.body || "").trim().toLowerCase();
-    if (!/^(confirm|yes|ok|👍|تمام|اكد|أكد)/.test(text)) return null;
+    if (!/^(confirm|yes|ok|\u{1F44D}|تمام|اكد|أكد)/u.test(text)) return null;
     const now = Date.now();
     const next = bookings
       .filter((b) => intl(b.phone) === from && b.status === "confirmed" && new Date(`${b.date}T${b.time || "00:00"}`).getTime() > now - 600000)
