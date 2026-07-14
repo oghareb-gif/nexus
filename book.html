@@ -35,7 +35,6 @@
       <a href="index.html#contact">Contact</a>
     </div>
     <div class="nav-actions">
-      <a href="#" id="waNav" class="ghost" style="padding:11px 16px;" target="_blank" rel="noopener">WhatsApp</a>
       <a href="index.html" class="btn">Home</a>
     </div>
   </div>
@@ -64,7 +63,7 @@
   <!-- STEP 1: Treatment -->
   <section class="step-panel active" data-panel="1">
     <h2 class="step-title">Choose your treatment</h2>
-    <p class="step-desc">Not sure which fits? Pick <b>Full Assessment</b> — we'll diagnose and guide you.</p>
+    <p class="step-desc">Pick one or more — tap to add. Not sure? Choose <b>Full Assessment</b> and we'll diagnose and guide you.</p>
     <div class="select-grid" id="serviceSelect"></div>
     <div class="step-nav">
       <span></span>
@@ -136,8 +135,19 @@
         <div class="sum-row"><span class="k">Date</span><span class="v" id="sumDate">—</span></div>
         <div class="sum-row"><span class="k">Time</span><span class="v" id="sumTime">—</span></div>
         <div class="sum-row"><span class="k">Duration</span><span class="v" id="sumDuration">—</span></div>
+        <div class="sum-row promo-row" id="sumPromoRow" style="display:none;"><span class="k">Promo <span id="sumPromoCode"></span></span><span class="v" id="sumPromoOff">—</span></div>
         <div class="sum-total"><span class="k">Est. price</span><span class="v" id="sumPrice">—</span></div>
       </div>
+    </div>
+
+    <!-- Promo code — this is the FINAL step, so the field lives here only -->
+    <div class="promo-box">
+      <label for="fPromo">Promo code <span class="opt">(optional)</span></label>
+      <div class="promo-input">
+        <input type="text" id="fPromo" placeholder="e.g. NEXUS10" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+        <button type="button" class="ghost" id="promoApply">Apply</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
     </div>
 
     <div class="step-nav">
@@ -168,10 +178,14 @@
           <div><span class="k">Guest</span><span class="v" id="tkGuest">—</span></div>
         </div>
       </div>
+      <div id="confirmPromo"></div>
       <div id="loyaltyResult"></div>
       <div class="confirm-actions">
         <a href="account.html" class="btn block">Go to my account</a>
-        <a href="#" id="waConfirm" class="ghost" style="justify-content:center;" target="_blank" rel="noopener">Message the clinic on WhatsApp (optional)</a>
+        <div class="confirm-contact">
+          <a href="#" id="waConfirm" class="contact-btn" target="_blank" rel="noopener"><span class="cb-ico" id="waConfirmIco"></span>Message on WhatsApp</a>
+          <a href="#" id="callConfirm" class="contact-btn"><span class="cb-ico" id="callConfirmIco"></span>Call the clinic</a>
+        </div>
       </div>
       <p class="confirm-note">A team member will confirm your slot shortly. See you soon 💚</p>
     </div>

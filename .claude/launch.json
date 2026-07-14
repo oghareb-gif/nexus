@@ -4,8 +4,8 @@
     {
       "name": "nexus-preview",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "/private/tmp/claude-502/-Users-omarghareb1-Desktop-Instant-website/49688a7c-169b-4115-a15a-095371037775/scratchpad/nexus_preview"],
-      "port": 8123
+      "runtimeArgs": ["/private/tmp/claude-502/-Users-omarghareb1-Desktop-Instant-website/e9de20e4-9bb7-4964-95b1-7a5f46d9fe06/scratchpad/serve.py"],
+      "port": 8931
     }
   ]
 }

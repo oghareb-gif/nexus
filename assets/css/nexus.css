@@ -805,7 +805,9 @@ footer { border-top: 1px solid var(--line); padding: 60px 0 40px; }
   text-align: left;
   overflow: hidden;
   margin-bottom: 26px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+  border-radius: 10px;
+  /* NOTE: no clip-path — a clipped corner cut through the green border and
+     left the outline looking incomplete on the Date/Time/Guest row. */
 }
 .ticket-top { padding: 22px 24px; display: flex; justify-content: space-between; align-items: flex-start; }
 .ticket-top h4 { font-size: 1.3rem; margin-bottom: 3px; }
@@ -1651,3 +1653,103 @@ tr:hover .client-open b { color: var(--lime); }
   .cc-book { grid-template-columns: 70px 1fr auto; }
   .cc-book-status, .cc-book-price { display: none; }
 }
+
+/* ============================================================================
+   CHANGE BATCH v2 — promo code, header hardening, mobile fixes
+   ========================================================================== */
+
+/* ---- Task 2: promo code (final booking step only) ---- */
+.promo-box { margin-top: 22px; }
+.promo-box > label { display: block; font-family: "JetBrains Mono", monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mute); margin-bottom: 10px; }
+.promo-box > label .opt { color: var(--faint); text-transform: none; letter-spacing: 0; }
+.promo-input { display: flex; gap: 10px; }
+.promo-input input {
+  flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--surface-line);
+  color: var(--paper); padding: 13px 14px; font-family: "JetBrains Mono", monospace;
+  font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; transition: border-color 0.2s;
+}
+.promo-input input:focus { outline: none; border-color: var(--lime); }
+.promo-input .ghost { flex: none; padding: 13px 22px; }
+.promo-msg { min-height: 18px; margin-top: 8px; font-family: "JetBrains Mono", monospace; font-size: 0.74rem; }
+.promo-msg.ok { color: var(--lime); }
+.promo-msg.err { color: var(--coral); }
+.sum-row.promo-row .v { color: var(--lime); }
+.sum-row.promo-row .k { text-transform: none; }
+
+/* ---- Task 3 + Task 7: header logo stays fixed; long account names truncate;
+       the "Book a session" button never wraps or gets squeezed ---- */
+.logo { flex-shrink: 0; }
+.logo-mark { flex-shrink: 0; }
+.nav-actions { flex-shrink: 0; }
+.nav-actions .btn { white-space: nowrap; }
+/* Only truncate while the account link sits in the top bar (not in the drawer) */
+nav .wrap > .nav-actions [data-account-link] {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* ---- Task 8: iOS/Android hardening ---- */
+/* Real viewport height on iOS Safari (URL bar) — 100vh fallback kept above */
+.dash-shell { min-height: 100dvh; }
+@media (min-width: 981px) {
+  .dash-side { height: 100dvh; }
+}
+/* Safe-area insets for notched iPhones on fixed/sticky chrome */
+@supports (padding: max(0px)) {
+  nav .wrap { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+  @media (max-width: 900px) {
+    .nav-drawer .nav-actions { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  }
+}
+/* 16px+ form controls so iOS Safari never auto-zooms on focus */
+@media (max-width: 680px) {
+  input, select, textarea, .promo-input input, #lockPass { font-size: 16px; }
+  /* Comfortable tap targets (>=44px) for key controls */
+  .promo-input .ghost, .step-nav .btn, .step-nav .ghost, .btn.block { min-height: 46px; }
+  .select-card .sc-check { width: 26px; height: 26px; }
+}
+/* Respect reduced-motion — kill looping/entrance animations for sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* ============================================================================
+   CHANGE BATCH v2.1 — header sizing, booking summary/ticket overflow, contact
+   ========================================================================== */
+
+/* Slightly smaller, tidier nav buttons when signed in (Book a session + account) */
+nav .wrap > .nav-actions .btn { padding: 9px 16px; font-size: 0.8rem; }
+nav .wrap > .nav-actions [data-account-link] { max-width: 160px; }
+
+/* Booking summary: long multi-treatment lists wrap cleanly at a smaller size */
+.review-summary .sum-row { align-items: flex-start; gap: 14px; }
+.review-summary .sum-row .k { flex: none; }
+.review-summary .sum-row .v { min-width: 0; overflow-wrap: anywhere; }
+#sumService { font-size: 0.82rem; line-height: 1.4; }
+
+/* Confirmation ticket: title no longer collides with the CONFIRMED badge */
+.ticket-top { gap: 14px; }
+.ticket-top h4 { min-width: 0; overflow-wrap: anywhere; font-size: 1.12rem; line-height: 1.2; }
+.ticket-top .status { flex: none; align-self: flex-start; }
+
+/* Confirmation contact actions: two small icon buttons (WhatsApp + Call) */
+.confirm-contact { display: flex; gap: 10px; margin-top: 2px; }
+.contact-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 10px;
+  font-size: 0.86rem; color: var(--paper); transition: border-color 0.2s, background 0.2s;
+}
+.contact-btn:hover { border-color: var(--lime); background: rgba(198, 255, 60, 0.06); }
+.contact-btn .cb-ico { display: inline-flex; }
+.contact-btn .cb-ico svg { width: 18px; height: 18px; color: var(--lime); }
+@media (max-width: 480px) { .confirm-contact { flex-direction: column; } }

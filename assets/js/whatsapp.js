@@ -26,21 +26,42 @@
     return `${((hour + 11) % 12) + 1}:${m} ${hour >= 12 ? "PM" : "AM"}`;
   }
 
+  /* Emojis as escaped code points so the message is correct no matter how the
+     source file happens to be saved on disk. encodeURIComponent (below) then
+     turns them into valid UTF-8 percent-escapes exactly once. */
+  const EMOJI = {
+    wave: "\u{1F44B}",   // 👋
+    gift: "\u{1F381}",   // 🎁
+    heart: "\u{1F49A}",  // 💚
+    tag: "\u{1F3F7}\u{FE0F}", // 🏷️
+  };
+
+  /* Treatments for a booking as an array of names — mirrors Store.getTreatments
+     but stays self-contained so whatsapp.js has no hard dependency. */
+  function treatmentsOf(b) {
+    if (window.NexusStore && window.NexusStore.getTreatments)
+      return window.NexusStore.getTreatments(b);
+    if (Array.isArray(b.treatments) && b.treatments.length) return b.treatments;
+    return b.serviceName ? [b.serviceName] : [];
+  }
+
   /* Compose the customer -> clinic message. */
   function bookingMessage(b) {
     const N = window.NEXUS;
+    const treatments = treatmentsOf(b);
     const lines = [
-      `Hi ${N.brand.name} 👋 I'd like to confirm a booking:`,
+      `Hi ${N.brand.name} ${EMOJI.wave} I'd like to confirm a booking:`,
       ``,
       `• Name: ${b.name}`,
-      `• Treatment: ${b.serviceName}`,
+      `• ${treatments.length > 1 ? "Treatments" : "Treatment"}: ${treatments.join(", ")}`,
       `• With: ${b.therapistName}`,
       `• Date: ${fmtDateLong(b.date)}`,
       `• Time: ${fmtTime12(b.time)}`,
     ];
-    if (b.isReward) lines.push(`• 🎁 Loyalty reward session`);
+    if (b.promoCode) lines.push(`• ${EMOJI.tag} Promo code: ${b.promoCode}`);
+    if (b.isReward) lines.push(`• ${EMOJI.gift} Loyalty reward session`);
     if (b.note) lines.push(`• Note: ${b.note}`);
-    lines.push(``, `Sent from the Nexus website`);
+    lines.push(``, `Sent from the Nexus website ${EMOJI.heart}`);
     return lines.join("\n");
   }
 

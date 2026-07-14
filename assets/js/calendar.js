@@ -218,7 +218,7 @@
   function dayRow(b) {
     const canWA = !!(b.phone || "").trim();
     const waUrl = canWA
-      ? WA.chatLinkTo(b.phone, `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! 💚`)
+      ? WA.chatLinkTo(b.phone, `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! \u{1F49A}`)
       : "#";
     return `
       <div class="cal-day-row ${b.status === "completed" ? "done" : ""}" style="--c:${colorFor(b)}">

@@ -271,13 +271,26 @@ window.NEXUS = {
      FULL AUTO needs the WhatsApp Business API (Meta Cloud API or Twilio) +
      a server — see WHATSAPP-SETUP.md. Once connected, set provider below and
      the same templates are sent with no tapping. */
+  /* --- Promo / discount codes ---
+     Optional code customers can enter on the FINAL booking step. Discount
+     values are placeholders for now — edit them (or add/disable codes) right
+     here in one place. type: "percent" applies value% off the shown total.
+     Set active:false to switch a code off without deleting it. */
+  promoCodes: {
+    NEXUS10:  { type: "percent", value: 10, active: true },
+    FRIEND20: { type: "percent", value: 20, active: true },
+  },
+
   whatsapp: {
     reminderMinutes: 60,
     templates: {
+      // Emojis are written as escaped code points so the message stays correct
+      // no matter how this file is saved/transferred/deployed (prevents the
+      // "emoji becomes ?" problem when the text reaches WhatsApp).
       confirm:
-        "Hi {name}! 👋 This is Nexus Physio Clinic.\nYour booking is confirmed ✅\n• {service} with {therapist}\n• {date} at {time}\n📍 31 El-Imam Ali St, Almazah, Heliopolis\nSee you then! 💚",
+        "Hi {name}! \u{1F44B} This is Nexus Physio Clinic.\nYour booking is confirmed \u{2705}\n• {service} with {therapist}\n• {date} at {time}\n\u{1F4CD} 31 El-Imam Ali St, Almazah, Heliopolis\nSee you then! \u{1F49A}",
       reminder:
-        "Hi {name}! ⏰ Reminder from Nexus Physio Clinic — your {service} with {therapist} is today at {time} (about an hour from now).\nPlease reply *CONFIRM* so we hold your slot 💚",
+        "Hi {name}! \u{23F0} Reminder from Nexus Physio Clinic — your {service} with {therapist} is today at {time} (about an hour from now).\nPlease reply *CONFIRM* so we hold your slot \u{1F49A}",
     },
     api: {
       provider: "",   // "" = not connected · "meta" or "twilio" once set up

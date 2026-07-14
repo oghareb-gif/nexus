@@ -14,6 +14,8 @@
   // Escape user-typed values (client names, notes) before they land in the
   // dashboard's HTML — a booking name must never be able to run script here.
   const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  // Escaped, comma-joined treatment list (handles multi-treatment + legacy).
+  const treatmentsLabel = (b) => esc(Store.getTreatments(b).join(", ") || b.serviceName || "");
   // Local-parts date string — toISOString() is UTC and reports the wrong
   // "today" between midnight and ~3 AM Egypt time.
   const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -354,7 +356,7 @@
         : when.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
     const waUrl = WA.chatLinkTo(
       b.phone,
-      `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! 💚`
+      `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! \u{1F49A}`
     );
     const rewardTag = b.isReward ? ' <span class="badge reward">🎁 Reward</span>' : "";
     const statusBadge =
@@ -366,7 +368,7 @@
     return `
       <tr>
         ${clientCell(b)}
-        <td>${esc(b.serviceName)}${rewardTag}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${esc(b.therapistName)}</div></td>
+        <td>${treatmentsLabel(b)}${rewardTag}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${esc(b.therapistName)}</div></td>
         <td>${dateLabel}<div style="font-size:0.74rem;color:var(--faint);font-family:'JetBrains Mono',monospace;">${WA.fmtTime12(b.time)}</div></td>
         <td>${clientTypeBadge(b.phoneKey)} ${statusBadge}</td>
         <td style="text-align:right;white-space:nowrap;">
@@ -395,14 +397,14 @@
   function schedRow(b) {
     const waUrl = WA.chatLinkTo(
       b.phone,
-      `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! 💚`
+      `Hi ${b.name.split(" ")[0]}, this is ${N.brand.name} confirming your ${b.serviceName} with ${b.therapistName} on ${WA.fmtDateLong(b.date)} at ${WA.fmtTime12(b.time)}. See you then! \u{1F49A}`
     );
     return `
       <div class="sched-row">
         <span class="sched-time">${WA.fmtTime12(b.time)}</span>
         <div class="sched-body${b.phoneKey ? " client-open" : ""}"${b.phoneKey ? ` data-client="${b.phoneKey}" title="See ${esc(b.name)}'s full profile"` : ""}>
           <b>${esc(b.name)}${b.isReward ? " 🎁" : ""}</b>
-          <span>${esc(b.serviceName)} · ${esc(b.therapistName)}</span>
+          <span>${treatmentsLabel(b)} · ${esc(b.therapistName)}</span>
         </div>
         <div class="sched-actions">
           <a class="icon-btn wa" href="${waUrl}" target="_blank" rel="noopener" title="Message on WhatsApp">${I.whatsapp}</a>
@@ -497,7 +499,7 @@
     const clients = Store.clientsFrom(bookings).sort((a, b) => b.visits - a.visits);
     $("#clientCount").textContent = `${clients.length} total`;
     const rows = clients.map((c) => {
-      const waUrl = WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} 👋`);
+      const waUrl = WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} \u{1F44B}`);
       return `<tr>
         ${clientCell(c)}
         <td>${c.visits} visit${c.visits === 1 ? "" : "s"} ${clientTypeBadge(c.phoneKey)}</td>
@@ -530,7 +532,7 @@
         cap.atCap
           ? `<span class="badge" style="color:var(--gold);border-color:var(--gold);">${cap.count}/${cap.max} · full</span>`
           : `<span class="badge">${cap.count}/${cap.max} active</span>`;
-      const waUrl = u.phone ? WA.chatLinkTo(u.phone, `Hi ${u.name.split(" ")[0]}, this is ${N.brand.name} 👋`) : "#";
+      const waUrl = u.phone ? WA.chatLinkTo(u.phone, `Hi ${u.name.split(" ")[0]}, this is ${N.brand.name} \u{1F44B}`) : "#";
       return `<tr>
         <td class="who${u.phoneKey ? " client-open" : ""}"${u.phoneKey ? ` data-client="${u.phoneKey}" title="See ${esc(u.name)}'s full profile"` : ""}><b>${esc(u.name)}</b><span>${esc(contact)}</span></td>
         <td>${mine.length} booking${mine.length === 1 ? "" : "s"}</td>
@@ -630,59 +632,77 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
+  /* Write a real Excel workbook (SheetJS). Column order is preserved and each
+     column gets a sensible width so names/phones/dates aren't clipped. Falls
+     back to CSV if the SheetJS CDN didn't load. */
+  function downloadSheet(base, sheetName, list, cols) {
+    if (window.XLSX) {
+      const header = cols.map((c) => c.h);
+      const body = list.map((item) => cols.map((c) => c.f(item)));
+      const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+      ws["!cols"] = cols.map((c) => ({ wch: c.w || 16 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, `${base}.xlsx`);
+    } else {
+      downloadCSV(`${base}.csv`, csv(list, cols));
+    }
+  }
+
   function exportData(kind) {
     const stamp = todayISO();
     if (kind === "appointments" || kind === "today") {
       let list = [...bookings].sort((a, b) => dt(a) - dt(b));
       if (kind === "today") list = list.filter((b) => b.date === todayISO() && b.status !== "cancelled");
-      downloadCSV(`nexus-${kind}-${stamp}.csv`, csv(list, [
-        { h: "Date", f: (b) => b.date },
-        { h: "Time", f: (b) => WA.fmtTime12(b.time) },
-        { h: "Client", f: (b) => b.name },
-        { h: "Phone", f: (b) => b.phone },
-        { h: "Treatment", f: (b) => b.serviceName },
-        { h: "Therapist", f: (b) => b.therapistName },
-        { h: `Price (${N.booking.currency})`, f: (b) => (b.isReward ? 0 : b.price || 0) },
-        { h: "Status", f: (b) => b.status },
-        { h: "Reward session", f: (b) => (b.isReward ? "yes" : "no") },
-      ]));
+      downloadSheet(`nexus-${kind}-${stamp}`, "Bookings", list, [
+        { h: "Date", f: (b) => b.date, w: 12 },
+        { h: "Time", f: (b) => WA.fmtTime12(b.time), w: 10 },
+        { h: "Client", f: (b) => b.name, w: 22 },
+        { h: "Phone", f: (b) => b.phone, w: 16 },
+        { h: "Treatments", f: (b) => Store.getTreatments(b).join(", "), w: 34 },
+        { h: "Therapist", f: (b) => b.therapistName, w: 20 },
+        { h: "Promo code", f: (b) => b.promoCode || "", w: 12 },
+        { h: `Price (${N.booking.currency})`, f: (b) => (b.isReward ? 0 : b.price || 0), w: 12 },
+        { h: "Status", f: (b) => b.status, w: 12 },
+        { h: "Reward session", f: (b) => (b.isReward ? "yes" : "no"), w: 14 },
+      ]);
     } else if (kind === "clients") {
       const clients = Store.clientsFrom(bookings).sort((a, b) => b.visits - a.visits);
-      downloadCSV(`nexus-clients-${stamp}.csv`, csv(clients, [
-        { h: "Client", f: (c) => c.name },
-        { h: "Phone", f: (c) => c.phone },
-        { h: "Visits", f: (c) => c.visits },
-        { h: `Total spend (${N.booking.currency})`, f: (c) => c.spend },
-        { h: "Loyalty progress", f: (c) => `${c.loyalty.cyclePos}/${c.loyalty.threshold}` },
-        { h: "Reward ready", f: (c) => (c.loyalty.rewardReady ? "yes" : "no") },
-      ]));
+      downloadSheet(`nexus-clients-${stamp}`, "Clients", clients, [
+        { h: "Client", f: (c) => c.name, w: 22 },
+        { h: "Phone", f: (c) => c.phone, w: 16 },
+        { h: "Visits", f: (c) => c.visits, w: 8 },
+        { h: `Total spend (${N.booking.currency})`, f: (c) => c.spend, w: 16 },
+        { h: "Loyalty progress", f: (c) => `${c.loyalty.cyclePos}/${c.loyalty.threshold}`, w: 15 },
+        { h: "Reward ready", f: (c) => (c.loyalty.rewardReady ? "yes" : "no"), w: 12 },
+      ]);
     } else if (kind === "members") {
       const users = Auth ? Auth.allUsers() : [];
       // Only safe fields — never passwords/hashes.
-      downloadCSV(`nexus-members-${stamp}.csv`, csv(users, [
-        { h: "Name", f: (u) => u.name },
-        { h: "Phone", f: (u) => u.phone || "" },
-        { h: "Email", f: (u) => u.email || "" },
-        { h: "Joined", f: (u) => (u.createdAt || "").split("T")[0] },
-      ]));
+      downloadSheet(`nexus-members-${stamp}`, "Members", users, [
+        { h: "Name", f: (u) => u.name, w: 22 },
+        { h: "Phone", f: (u) => u.phone || "", w: 16 },
+        { h: "Email", f: (u) => u.email || "", w: 26 },
+        { h: "Joined", f: (u) => (u.createdAt || "").split("T")[0], w: 12 },
+      ]);
     } else if (kind === "loyalty") {
       const clients = Store.clientsFrom(bookings).sort(
         (a, b) => b.loyalty.rewardReady - a.loyalty.rewardReady || b.loyalty.cyclePos - a.loyalty.cyclePos
       );
-      downloadCSV(`nexus-loyalty-${stamp}.csv`, csv(clients, [
-        { h: "Client", f: (c) => c.name },
-        { h: "Phone", f: (c) => c.phone },
-        { h: "Visits", f: (c) => c.visits },
-        { h: "Progress", f: (c) => `${c.loyalty.cyclePos}/${c.loyalty.threshold}` },
-        { h: "Reward ready", f: (c) => (c.loyalty.rewardReady ? "yes" : "no") },
-        { h: "Rewards earned", f: (c) => c.loyalty.rewardsEarned },
-      ]));
+      downloadSheet(`nexus-loyalty-${stamp}`, "Loyalty", clients, [
+        { h: "Client", f: (c) => c.name, w: 22 },
+        { h: "Phone", f: (c) => c.phone, w: 16 },
+        { h: "Visits", f: (c) => c.visits, w: 8 },
+        { h: "Progress", f: (c) => `${c.loyalty.cyclePos}/${c.loyalty.threshold}`, w: 12 },
+        { h: "Reward ready", f: (c) => (c.loyalty.rewardReady ? "yes" : "no"), w: 12 },
+        { h: "Rewards earned", f: (c) => c.loyalty.rewardsEarned, w: 14 },
+      ]);
     } else if (kind === "revenue") {
-      downloadCSV(`nexus-revenue-${stamp}.csv`, csv(buildBuckets(12), [
-        { h: "Week starting", f: (b) => b.label },
-        { h: "Visits", f: (b) => b.visits },
-        { h: `Revenue (${N.booking.currency})`, f: (b) => b.rev },
-      ]));
+      downloadSheet(`nexus-revenue-${stamp}`, "Revenue", buildBuckets(12), [
+        { h: "Week starting", f: (b) => b.label, w: 14 },
+        { h: "Visits", f: (b) => b.visits, w: 8 },
+        { h: `Revenue (${N.booking.currency})`, f: (b) => b.rev, w: 16 },
+      ]);
     } else if (kind === "ics") {
       exportICS();
     }

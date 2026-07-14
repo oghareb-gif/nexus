@@ -193,7 +193,8 @@
       const a = document.createElement("a");
       a.setAttribute("data-account-link", "");
       a.className = "ghost";
-      a.style.padding = "11px 16px";
+      a.style.padding = "8px 13px";
+      a.style.fontSize = "0.78rem";
       if (u) {
         a.href = "account.html";
         a.textContent = u.name.split(" ")[0] + " · Account";

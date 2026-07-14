@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@300;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/css/nexus.css" />
+<!-- SheetJS — real .xlsx export (falls back to CSV if this fails to load) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -70,7 +72,7 @@
         <div class="export-wrap" id="exportWrap">
           <button class="ghost" id="exportBtn" style="padding:11px 16px;">⬇ Export</button>
           <div class="export-menu" id="exportMenu">
-            <div class="em-label">Download as CSV</div>
+            <div class="em-label">Download as Excel</div>
             <button data-export="appointments">All appointments</button>
             <button data-export="today">Today's schedule</button>
             <button data-export="clients">Clients &amp; visits</button>

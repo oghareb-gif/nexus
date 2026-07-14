@@ -101,7 +101,7 @@
           <span>${b.time ? WA.fmtTime12(b.time) : ""}</span>
         </div>
         <div class="cc-book-main">
-          <b>${esc(b.serviceName)}${b.isReward ? " 🎁" : ""}</b>
+          <b>${esc(Store.getTreatments(b).join(", ") || b.serviceName || "")}${b.isReward ? " 🎁" : ""}${b.promoCode ? " · 🏷️ " + esc(b.promoCode) : ""}</b>
           <span>${esc(b.therapistName || "")}${b.note ? " · " + esc(b.note) : ""}</span>
         </div>
         <div class="cc-book-price">${b.isReward ? "Free" : money(b.price)}</div>
@@ -120,7 +120,7 @@
     const c = clientData(phoneKey);
     const L = c.loyalty;
     const pct = L.rewardReady ? 100 : Math.round((L.cyclePos / L.threshold) * 100);
-    const waUrl = c.phone ? WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} 👋`) : "#";
+    const waUrl = c.phone ? WA.chatLinkTo(c.phone, `Hi ${c.name.split(" ")[0]}, this is ${N.brand.name} \u{1F44B}`) : "#";
     const fmtDate = (iso) => iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
     const returning = c.visits > 1;
 

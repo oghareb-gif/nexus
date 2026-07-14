@@ -84,8 +84,14 @@
 
   /* ---------- Reservation cards ---------- */
   function resvCard(b, past) {
-    const svc = N.services.find((s) => s.id === b.serviceId);
-    const dur = svc ? `${svc.duration} min` : "";
+    const treatments = Store.getTreatments(b);
+    // Sum durations across every treatment in the booking.
+    const totalDur = treatments.reduce((sum, name) => {
+      const s = N.services.find((x) => x.name === name);
+      return sum + (s ? s.duration : 0);
+    }, 0);
+    const dur = totalDur ? `${totalDur} min` : "";
+    const promoTag = b.promoCode ? `<span class="badge">🏷️ ${b.promoCode}</span>` : "";
     const rewardTag = b.isReward ? '<span class="badge reward">🎁 Reward</span>' : "";
     const statusBadge =
       b.status === "cancelled"
@@ -103,7 +109,7 @@
           <span class="rd-mon">${new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { month: "short" })}</span>
         </div>
         <div class="resv-body">
-          <div class="resv-top"><b>${b.serviceName}</b> ${rewardTag} ${statusBadge}</div>
+          <div class="resv-top"><b>${treatments.join(", ")}</b> ${promoTag} ${rewardTag} ${statusBadge}</div>
           <div class="resv-meta">${WA.fmtDateLong(b.date)} · ${WA.fmtTime12(b.time)}${dur ? " · " + dur : ""}</div>
           <div class="resv-meta faint">${b.therapistName}${b.isReward ? "" : " · " + money(b.price)}</div>
         </div>

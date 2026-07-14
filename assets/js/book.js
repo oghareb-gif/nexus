@@ -22,10 +22,11 @@
 
   const state = {
     step: 1,
-    service: null,
+    services: [], // multi-select: array of service objects (at least one)
     therapist: { id: "any", name: "First available" },
     date: null,
     time: null,
+    promo: null, // { code, type, value } once a valid code is applied
   };
 
   /* Flash an inline hint and nudge a button so a click never feels ignored. */
@@ -43,15 +44,18 @@
     if (el) el.textContent = "";
   }
 
-  /* ---------- WhatsApp nav link ---------- */
-  $("#waNav").href = WA.chatLink();
+  /* ---------- Nav + confirmation contact actions ---------- */
   $("#hoursLine").textContent = N.brand.hours;
+  // Confirmation screen: "Message on WhatsApp" + "Call the clinic" with icons.
+  if ($("#waConfirmIco")) $("#waConfirmIco").innerHTML = I.whatsapp || "";
+  if ($("#callConfirmIco")) $("#callConfirmIco").innerHTML = I.phone || "";
+  if ($("#callConfirm")) $("#callConfirm").href = "tel:" + N.contact.phoneDisplay.replace(/\s/g, "");
 
-  /* ---------- Step 1: services ---------- */
+  /* ---------- Step 1: services (multi-select) ---------- */
   $("#serviceSelect").innerHTML = N.services
     .map(
       (s) => `
-    <button type="button" class="select-card" data-service="${s.id}">
+    <button type="button" class="select-card" data-service="${s.id}" aria-pressed="false">
       <div class="sc-ico">${I[s.icon] || I.spark}</div>
       <div>
         <h4>${s.name}</h4>
@@ -65,10 +69,13 @@
 
   $$("#serviceSelect .select-card").forEach((card) => {
     card.addEventListener("click", () => {
-      $$("#serviceSelect .select-card").forEach((c) => c.classList.remove("sel"));
-      card.classList.add("sel");
-      state.service = N.services.find((s) => s.id === card.dataset.service);
-      clearHint("hint1");
+      // Toggle this treatment in/out — book several in one go.
+      const svc = N.services.find((s) => s.id === card.dataset.service);
+      const on = card.classList.toggle("sel");
+      card.setAttribute("aria-pressed", on ? "true" : "false");
+      state.services = state.services.filter((s) => s.id !== svc.id);
+      if (on) state.services.push(svc);
+      if (state.services.length) clearHint("hint1");
     });
   });
 
@@ -190,14 +197,86 @@
   }
 
   /* ---------- Step 4: summary + loyalty ---------- */
+  const treatmentNames = () => state.services.map((s) => s.name);
+  const subtotal = () => state.services.reduce((sum, s) => sum + s.price, 0);
+  const totalDuration = () => state.services.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+  // Discount from an applied promo, applied to the shown subtotal.
+  function promoDiscount(base) {
+    if (!state.promo) return 0;
+    if (state.promo.type === "percent")
+      return Math.round((base * state.promo.value) / 100);
+    return 0;
+  }
+
   function fillSummary() {
-    $("#sumService").textContent = state.service.name;
+    const names = treatmentNames();
+    $("#sumService").textContent = names.length ? names.join(", ") : "—";
+    // Relabel for one vs many treatments.
+    const label = $("#sumService").closest(".sum-row").querySelector(".k");
+    if (label) label.textContent = names.length > 1 ? "Treatments" : "Treatment";
     $("#sumTherapist").textContent = state.therapist.name;
     $("#sumDate").textContent = WA.fmtDateLong(state.date);
     $("#sumTime").textContent = WA.fmtTime12(state.time);
-    $("#sumDuration").textContent = `${state.service.duration} min`;
-    $("#sumPrice").textContent = money(state.service.price);
+    $("#sumDuration").textContent = `${totalDuration()} min`;
+    paintTotals();
   }
+
+  // Paint the price rows — subtotal, an optional promo discount line, and the
+  // final total. Called on entry to step 4 and whenever a promo is applied.
+  function paintTotals() {
+    const base = subtotal();
+    const off = promoDiscount(base);
+    const promoRow = $("#sumPromoRow");
+    if (state.promo && off > 0) {
+      promoRow.style.display = "";
+      $("#sumPromoCode").textContent = `(${state.promo.code})`;
+      $("#sumPromoOff").textContent = `− ${money(off)}`;
+    } else {
+      promoRow.style.display = "none";
+    }
+    $("#sumPrice").textContent = money(Math.max(0, base - off));
+  }
+
+  /* ---------- Promo code (final step only) ---------- */
+  function applyPromo() {
+    const input = $("#fPromo");
+    const msg = $("#promoMsg");
+    const code = (input.value || "").trim().toUpperCase();
+    input.value = code;
+    if (!code) {
+      state.promo = null;
+      msg.className = "promo-msg";
+      msg.textContent = "";
+      paintTotals();
+      return;
+    }
+    const codes = N.promoCodes || {};
+    const found = codes[code];
+    if (found && found.active) {
+      state.promo = { code, type: found.type, value: found.value };
+      msg.className = "promo-msg ok";
+      msg.textContent = "Code applied ✓";
+    } else {
+      state.promo = null;
+      msg.className = "promo-msg err";
+      msg.textContent = "Invalid code";
+    }
+    paintTotals();
+  }
+  $("#promoApply").addEventListener("click", applyPromo);
+  $("#fPromo").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); applyPromo(); }
+  });
+  // Editing the code after applying clears the applied state until re-applied.
+  $("#fPromo").addEventListener("input", () => {
+    if (state.promo && $("#fPromo").value.trim().toUpperCase() !== state.promo.code) {
+      state.promo = null;
+      $("#promoMsg").className = "promo-msg";
+      $("#promoMsg").textContent = "";
+      paintTotals();
+    }
+  });
 
   let loyaltyDebounce;
   async function refreshLoyalty() {
@@ -257,7 +336,7 @@
   }
 
   $("#next1").addEventListener("click", (e) => {
-    if (!state.service) return showHint("hint1", "↑ Please choose a treatment first", e.currentTarget);
+    if (!state.services.length) return showHint("hint1", "↑ Please choose at least one treatment", e.currentTarget);
     goTo(2);
   });
   $("#next2").addEventListener("click", () => goTo(3));
@@ -296,33 +375,51 @@
     }
 
     const L = Store.loyaltyFor(bookings, phone);
-    const isReward = N.loyalty.enabled && L.rewardReady;
+    // Reward frees one reward-eligible session (the priciest of those chosen).
+    const rewardEligible = state.services.filter((s) => s.rewardEligible);
+    const isReward = N.loyalty.enabled && L.rewardReady && rewardEligible.length > 0;
+    const rewardOff = isReward ? Math.max(...rewardEligible.map((s) => s.price)) : 0;
+
+    const base = subtotal();
+    const promoOff = promoDiscount(Math.max(0, base - rewardOff));
+    const finalPrice = Math.max(0, base - rewardOff - promoOff);
 
     const booking = {
       userId: user.id,
       name,
       phone,
-      serviceId: state.service.id,
-      serviceName: state.service.name,
+      serviceId: state.services[0].id,          // primary (back-compat)
+      serviceName: state.services[0].name,       // primary (back-compat)
+      treatments: treatmentNames(),              // full multi-select list
       therapistId: state.therapist.id,
       therapistName: state.therapist.name,
       date: state.date,
       time: state.time,
-      price: isReward && state.service.rewardEligible ? 0 : state.service.price,
+      price: finalPrice,
+      promoCode: state.promo ? state.promo.code : null,
       note: $("#fNote").value.trim(),
-      isReward: isReward && state.service.rewardEligible,
+      isReward,
     };
 
     const saved = await Store.addBooking(booking);
     const waUrl = WA.bookingLink(saved);
 
     // Fill confirmation ticket
-    $("#tkService").textContent = saved.serviceName;
-    $("#tkTherapist").textContent = `with ${saved.therapistName} · ${state.service.duration} min`;
+    const names = treatmentNames();
+    $("#tkService").textContent = names.join(", ");
+    $("#tkTherapist").textContent = `with ${saved.therapistName} · ${totalDuration()} min`;
     $("#tkDate").textContent = WA.fmtDateLong(saved.date);
     $("#tkTime").textContent = WA.fmtTime12(saved.time);
     $("#tkGuest").textContent = saved.name;
     $("#waConfirm").href = waUrl;
+
+    // Promo confirmation line
+    const cp = $("#confirmPromo");
+    if (cp) {
+      cp.innerHTML = saved.promoCode
+        ? `<div class="loyalty-banner" style="justify-content:center;margin-bottom:16px;"><span class="lb-ico">🏷️</span><div class="lb-txt"><b>Promo ${saved.promoCode} applied</b><span>Your discount is reflected in the total above.</span></div></div>`
+        : "";
+    }
 
     // Loyalty result message
     const after = Store.loyaltyFor(await Store.getBookings(), phone);

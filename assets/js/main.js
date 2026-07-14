@@ -38,7 +38,6 @@
       <p>${s.desc}</p>
       <div class="service-meta">
         <span>${s.duration} min</span>
-        <span class="price">${money(s.price)}</span>
       </div>
     </div>`
     )

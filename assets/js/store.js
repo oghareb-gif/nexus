@@ -46,6 +46,19 @@
   const Store = {
     normalizePhone,
 
+    /* Treatments for a booking as an array of names. Handles the new
+       multi-treatment shape, the legacy single `serviceName`, and any very old
+       `treatment` string — so old localStorage / demo bookings still display.
+       This is the ONE place that logic lives; every page calls it. */
+    getTreatments(booking) {
+      if (!booking) return [];
+      if (Array.isArray(booking.treatments) && booking.treatments.length)
+        return booking.treatments;
+      if (booking.serviceName) return [booking.serviceName];
+      if (booking.treatment) return [booking.treatment];
+      return [];
+    },
+
     /* Save a booking. Returns the stored record (with id + loyalty snapshot). */
     async addBooking(data) {
       const record = {
@@ -56,11 +69,20 @@
         phoneKey: normalizePhone(data.phone),
         serviceId: data.serviceId,
         serviceName: data.serviceName,
+        // Multi-treatment bookings store the full list of treatment names here;
+        // serviceName above stays the primary one for backward compatibility.
+        treatments:
+          Array.isArray(data.treatments) && data.treatments.length
+            ? data.treatments
+            : data.serviceName
+            ? [data.serviceName]
+            : null,
         therapistId: data.therapistId,
         therapistName: data.therapistName,
         date: data.date, // YYYY-MM-DD
         time: data.time, // HH:MM
         price: Number(data.price) || 0,
+        promoCode: data.promoCode || null,
         note: (data.note || "").trim(),
         status: "confirmed",
         isReward: !!data.isReward,
